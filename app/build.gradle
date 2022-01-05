@@ -30,6 +30,11 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+
+    buildFeatures {
+        viewBinding = true
+    }
+
 }
 
 dependencies {
@@ -42,4 +47,53 @@ dependencies {
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+
+    //----------------------- Firebase -------------------------------------------------------------
+    implementation 'com.google.firebase:firebase-auth-ktx'
+    implementation platform('com.google.firebase:firebase-bom:29.0.0')
+
+    //----------------------- Firebase UI-----------------------------------------------------------
+    implementation 'com.firebaseui:firebase-ui-auth:7.2.0'
+
+    //----------------------- Firebase database ----------------------------------------------------
+    implementation 'com.google.firebase:firebase-database-ktx'
+
+    //----------------------- Firebase storage -----------------------------------------------------
+    //implementation 'com.google.firebase:firebase-storage-ktx'
+
+    //----------------------- Firebase cloud messaging ---------------------------------------------
+    //implementation 'com.google.firebase:firebase-messaging-ktx'
+
+    //----------------------- Firebase analytics ---------------------------------------------------
+    implementation 'com.google.firebase:firebase-analytics-ktx:20.0.2'
+
+    //----------------------- GeoFire --------------------------------------------------------------
+    //implementation 'com.firebase:geofire-android:3.1.0'
+
+    //----------------------- Material -------------------------------------------------------------
+    implementation 'com.google.android.material:material:1.4.0'
+
+    //----------------------- RX Java --------------------------------------------------------------
+    implementation 'io.reactivex.rxjava3:rxandroid:3.0.0'
+    implementation 'io.reactivex.rxjava3:rxjava:3.0.0'
+
+    //----------------------- KToasty --------------------------------------------------------------
+    implementation 'com.github.shubhamvashisht:KToasty:1.0'
+
+    //----------------------- Google Maps ----------------------------------------------------------
+    //implementation 'com.google.android.gms:play-services-maps:18.0.1'
+
+    //----------------------- Google location ------------------------------------------------------
+    //implementation 'com.google.android.gms:play-services-location:19.0.0'
+
+    //----------------------- Dexter ---------------------------------------------------------------
+    //implementation 'com.karumi:dexter:6.2.3'
+
+    //----------------------- Circle image view ----------------------------------------------------
+    //implementation 'de.hdodenhof:circleimageview:3.1.0'
+
+    //----------------------- Glide ----------------------------------------------------------------
+    /*implementation 'com.github.bumptech.glide:glide:4.12.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.12.0'*/
 }
+apply plugin: 'com.google.gms.google-services'

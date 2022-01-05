@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "901575345953",
+    "project_id": "uberclonerider-b8559",
+    "storage_bucket": "uberclonerider-b8559.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:901575345953:android:5dc904b170a6782542a060",
+        "android_client_info": {
+          "package_name": "com.greg.uberclonerider"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "901575345953-khvvvjmr12m475qdp4b6ts1lr3rmf8oc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.greg.uberclonerider",
+            "certificate_hash": "84ca1a190f88f24a4494278f712fa10287c71cf1"
+          }
+        },
+        {
+          "client_id": "901575345953-37p2iq8kbtpqj6jkts214j8lkg9ptniq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOIn6nFhuQIPCwJKcMli1nhvyut-GFr-Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "901575345953-37p2iq8kbtpqj6jkts214j8lkg9ptniq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
