@@ -40,4 +40,5 @@
     <string name="phone_number_error">Please enter a phone number</string>
     <string name="title_activity_home">HomeActivity</string>
     <string name="menu_gallery">Gallery</string>
+    <string name="user_position_message">You are here!</string>
 </resources>

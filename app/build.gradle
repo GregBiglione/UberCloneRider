@@ -18,9 +18,15 @@ android {
     }
 
     buildTypes {
+        debug{
+            buildConfigField 'String', "ApiKey", MAPS_API_KEY
+            resValue 'string', "ApiKey", MAPS_API_KEY
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField 'String', "ApiKey", MAPS_API_KEY
+            resValue 'string', "ApiKey", MAPS_API_KEY
         }
     }
     compileOptions {
@@ -87,7 +93,7 @@ dependencies {
     implementation 'com.github.shubhamvashisht:KToasty:1.0'
 
     //----------------------- Google Maps ----------------------------------------------------------
-    //implementation 'com.google.android.gms:play-services-maps:18.0.1'
+    implementation 'com.google.android.gms:play-services-maps:18.0.1'
 
     //----------------------- Google location ------------------------------------------------------
     //implementation 'com.google.android.gms:play-services-location:19.0.0'
