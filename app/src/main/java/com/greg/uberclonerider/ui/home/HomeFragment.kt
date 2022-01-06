@@ -12,6 +12,8 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.droidman.ktoasty.KToasty
+import com.firebase.geofire.GeoFire
+import com.firebase.geofire.GeoLocation
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -21,8 +23,13 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.*
 import com.greg.uberclonerider.Constant.Companion.ACCESS_FINE_LOCATION
 import com.greg.uberclonerider.Constant.Companion.DEFAULT_ZOOM
+import com.greg.uberclonerider.Constant.Companion.INFO_CONNECTED
+import com.greg.uberclonerider.Constant.Companion.RIDER_LOCATION
 import com.greg.uberclonerider.R
 import com.greg.uberclonerider.databinding.FragmentHomeBinding
 import com.karumi.dexter.Dexter
@@ -43,6 +50,11 @@ class HomeFragment : Fragment() {
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var newPosition: LatLng
     private lateinit var userLocation: LatLng
+    //------------------- Online system ------------------------------------------------------------
+    private lateinit var geoFire: GeoFire
+    private lateinit var onlineDatabaseReference: DatabaseReference
+    private lateinit var currentRiderReference: DatabaseReference
+    private lateinit var riderLocationReference: DatabaseReference
 
     override fun onCreateView(
             inflater: LayoutInflater,
@@ -109,6 +121,9 @@ class HomeFragment : Fragment() {
     //----------------------------------------------------------------------------------------------
 
     private fun getLocationRequest(){
+        getDriverLocationFromDatabase()
+        getRealTimeLocation()
+        registerOnlineSystem()
         locationRequest = LocationRequest.create()
         locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         locationRequest.fastestInterval = 3000
@@ -134,6 +149,17 @@ class HomeFragment : Fragment() {
             )
             moveCamera()
             zoomOnLocation()
+            //------------------- Update real time location  ---------------------------------------
+            geoFire.setLocation(
+                FirebaseAuth.getInstance().currentUser!!.uid, GeoLocation(locationResult.lastLocation.latitude, locationResult.lastLocation.longitude)
+            ){key: String?, databaseError: DatabaseError? ->
+                if (databaseError != null){
+                    Snackbar.make(mapFragment.requireView(), databaseError.message, Snackbar.LENGTH_LONG).show()
+                }
+                else{
+                    Snackbar.make(mapFragment.requireView(), "You're online!", Snackbar.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
@@ -151,6 +177,8 @@ class HomeFragment : Fragment() {
 
     override fun onDestroy() {
         fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+        removeLocation()
+        removeOnlineListener()
         super.onDestroy()
     }
 
@@ -211,5 +239,76 @@ class HomeFragment : Fragment() {
         binding.gps.setOnClickListener {
             lastKnownLocation()
         }
+    }
+
+    /**-----------------------------------------------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+     *----------------------- Online system ----------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Online value event listener ---------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private val onlineValueEventListener = object : ValueEventListener {
+        override fun onDataChange(snapshot: DataSnapshot) {
+            if (snapshot.exists()){
+                currentRiderReference.onDisconnect().removeValue()
+            }
+        }
+
+        override fun onCancelled(error: DatabaseError) {
+            Snackbar.make(mapFragment.requireView(), error.message, Snackbar.LENGTH_LONG).show()
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Remove location ---------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun removeLocation(){
+        geoFire.removeLocation(FirebaseAuth.getInstance().currentUser!!.uid)
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Remove online value event listener --------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun removeOnlineListener(){
+        onlineDatabaseReference.removeEventListener(onlineValueEventListener)
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Register online system --------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    override fun onResume() {
+        super.onResume()
+        registerOnlineSystem()
+    }
+
+    private fun registerOnlineSystem() {
+        onlineDatabaseReference.addValueEventListener(onlineValueEventListener)
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Get rider's location from database --------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun getDriverLocationFromDatabase(){
+        onlineDatabaseReference = FirebaseDatabase.getInstance().reference.child(INFO_CONNECTED)
+        riderLocationReference = FirebaseDatabase.getInstance().getReference(RIDER_LOCATION)
+        currentRiderReference = FirebaseDatabase.getInstance().reference.child(
+            FirebaseAuth.getInstance().currentUser!!.uid
+        )
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Get driver's realtime location ------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun getRealTimeLocation(){
+        geoFire = GeoFire(riderLocationReference)
     }
 }

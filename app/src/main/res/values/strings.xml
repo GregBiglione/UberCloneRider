@@ -41,4 +41,5 @@
     <string name="title_activity_home">HomeActivity</string>
     <string name="menu_gallery">Gallery</string>
     <string name="user_position_message">You are here!</string>
+    <string name="user_online_message">You\'re online!</string>
 </resources>
