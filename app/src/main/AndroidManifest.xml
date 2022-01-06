@@ -10,6 +10,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.UberCloneRider">
         <activity
+            android:name=".HomeActivity"
+            android:label="@string/title_activity_home"
+            android:theme="@style/Theme.UberCloneRider.NoActionBar"></activity>
+        <activity
             android:name=".SplashScreenActivity"
             android:theme="@style/SplashScreenTheme">
             <intent-filter>

@@ -1,20 +1,21 @@
 {
   "project_info": {
-    "project_number": "901575345953",
-    "project_id": "uberclonerider-b8559",
-    "storage_bucket": "uberclonerider-b8559.appspot.com"
+    "project_number": "458527800898",
+    "firebase_url": "https://uberclonerider-ea02f-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "uberclonerider-ea02f",
+    "storage_bucket": "uberclonerider-ea02f.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:901575345953:android:5dc904b170a6782542a060",
+        "mobilesdk_app_id": "1:458527800898:android:2f43a32d67505aafa937db",
         "android_client_info": {
           "package_name": "com.greg.uberclonerider"
         }
       },
       "oauth_client": [
         {
-          "client_id": "901575345953-khvvvjmr12m475qdp4b6ts1lr3rmf8oc.apps.googleusercontent.com",
+          "client_id": "458527800898-atopu2fg1cqaq7lqqajsm0beju143cji.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.greg.uberclonerider",
@@ -22,20 +23,20 @@
           }
         },
         {
-          "client_id": "901575345953-37p2iq8kbtpqj6jkts214j8lkg9ptniq.apps.googleusercontent.com",
+          "client_id": "458527800898-a84fve1g343oiqg5sbp43eho1pufrfg2.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBOIn6nFhuQIPCwJKcMli1nhvyut-GFr-Y"
+          "current_key": "AIzaSyDhWVNmB-juJp2VAcE8Qao83kN250NwaSw"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "901575345953-37p2iq8kbtpqj6jkts214j8lkg9ptniq.apps.googleusercontent.com",
+              "client_id": "458527800898-a84fve1g343oiqg5sbp43eho1pufrfg2.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
