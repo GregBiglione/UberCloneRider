@@ -33,7 +33,7 @@
     <string name="gallery_permission">Access gallery granted</string>
     <string name="gallery_denied">Access gallery denied</string>
     <string name="gallery_permission_message">We need your permission to access the camera</string>
-    <string name="information_update_success">Information updated succesfully</string>
+    <string name="information_update_success">Information updated successfully</string>
     <string name="uploading">Uploading:</string>
     <string name="first_name_error">Please enter a first name</string>
     <string name="last_name_error">Please enter a last name</string>
@@ -42,4 +42,12 @@
     <string name="menu_gallery">Gallery</string>
     <string name="user_position_message">You are here!</string>
     <string name="user_online_message">You\'re online!</string>
+
+    <string name="log_out_title">Log out</string>
+    <string name="log_out_message">Do you really want to log out?</string>
+    <string name="log_out_negative_button">Cancel</string>
+    <string name="log_out_positive_button">Log out</string>
+    <string name="log_out_k_toasty">Log out successfully</string>
+
+    <string name="welcome">Welcome</string>
 </resources>
