@@ -1,6 +1,8 @@
-package com.greg.uberclonerider
+package com.greg.uberclonerider.ui.activity
 
 import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
 import android.view.View
@@ -18,9 +20,10 @@ import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
+import com.greg.uberclonerider.*
 import de.hdodenhof.circleimageview.CircleImageView
 
-class HomeActivity : AppCompatActivity() {
+class HomeActivity : AppCompatActivity(), PhotoChoiceDialog.CameraListener {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var drawerLayout: DrawerLayout
@@ -28,6 +31,8 @@ class HomeActivity : AppCompatActivity() {
     private lateinit var navController: NavController
     private lateinit var headerView: View
     private lateinit var photo: CircleImageView
+    private lateinit var savePhoto: SavePhoto
+    private var photoFromStorage: Uri? = null
     //----------------------- Firebase storage -----------------------------------------------------
     private lateinit var storageReference: StorageReference
 
@@ -48,6 +53,7 @@ class HomeActivity : AppCompatActivity() {
                 R.id.nav_home), drawerLayout)
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
+        savePhoto = SavePhoto()
         setDriverInformation()
         clickOnNavItem()
     }
@@ -119,7 +125,7 @@ class HomeActivity : AppCompatActivity() {
     //----------------------------------------------------------------------------------------------
 
     private fun showPhotoChoiceDialog() {
-        val photoChoiceDialog = PhotoChoiceDialog()
+        val photoChoiceDialog = PhotoChoiceDialog(this)
         photoChoiceDialog.show(supportFragmentManager, "PhotoChoiceDialogBox")
     }
 
@@ -129,5 +135,15 @@ class HomeActivity : AppCompatActivity() {
 
     private fun goToHomeActivity() {
         startActivity(Intent(this, HomeActivity::class.java))
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //----------------------- Get Bitmap from dialog box -------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    override fun applyCameraPhoto(bitmapPhoto: Bitmap) {
+        photo.setImageBitmap(bitmapPhoto)
+        val tempUri: Uri? = savePhoto.getImageUri(this, bitmapPhoto)
+        photoFromStorage = tempUri
     }
 }

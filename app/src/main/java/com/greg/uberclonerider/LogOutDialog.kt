@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import com.droidman.ktoasty.KToasty
 import com.google.firebase.auth.FirebaseAuth
+import com.greg.uberclonerider.ui.activity.SplashScreenActivity
 
 class LogOutDialog: DialogFragment() {
 

@@ -1,4 +1,4 @@
-package com.greg.uberclonerider
+package com.greg.uberclonerider.ui.activity
 
 import android.content.ContentValues
 import android.content.Intent
@@ -22,7 +22,10 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.*
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import com.greg.uberclonerider.Common
 import com.greg.uberclonerider.Constant.Companion.RIDER_INFORMATION
+import com.greg.uberclonerider.R
+import com.greg.uberclonerider.Rider
 import com.greg.uberclonerider.databinding.SpashProgressBarBinding
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Completable

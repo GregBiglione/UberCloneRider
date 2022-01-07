@@ -5,6 +5,9 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
 
     <application
         android:allowBackup="true"
@@ -18,11 +21,11 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/ApiKey"/>
         <activity
-            android:name=".HomeActivity"
+            android:name=".ui.activity.HomeActivity"
             android:label="@string/title_activity_home"
             android:theme="@style/Theme.UberCloneRider.NoActionBar"></activity>
         <activity
-            android:name=".SplashScreenActivity"
+            android:name=".ui.activity.SplashScreenActivity"
             android:theme="@style/SplashScreenTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -50,4 +50,6 @@
     <string name="log_out_k_toasty">Log out successfully</string>
 
     <string name="welcome">Welcome</string>
+    <string name="permission_denied_part_1">Permission</string>
+    <string name="permission_denied_part_2">was denied</string>
 </resources>
