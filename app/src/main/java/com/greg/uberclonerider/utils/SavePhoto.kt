@@ -1,4 +1,4 @@
-package com.greg.uberclonerider
+package com.greg.uberclonerider.utils
 
 import android.content.Context
 import android.graphics.Bitmap

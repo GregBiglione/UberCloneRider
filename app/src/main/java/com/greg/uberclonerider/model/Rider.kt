@@ -1,4 +1,4 @@
-package com.greg.uberclonerider
+package com.greg.uberclonerider.model
 
 data class Rider(
         var avatar: String? = "",

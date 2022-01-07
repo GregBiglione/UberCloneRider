@@ -1,13 +1,13 @@
-package com.greg.uberclonerider
+package com.greg.uberclonerider.ui.dialog_box
 
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
@@ -15,7 +15,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import com.droidman.ktoasty.KToasty
-import com.greg.uberclonerider.Constant.Companion.ACCESS_CAMERA
+import com.greg.uberclonerider.R
+import com.greg.uberclonerider.utils.Constant.Companion.ACCESS_CAMERA
+import com.greg.uberclonerider.utils.Constant.Companion.READ_STORAGE
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionDeniedResponse
@@ -23,7 +25,7 @@ import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.single.PermissionListener
 
-class PhotoChoiceDialog(private val cameraListener: CameraListener): DialogFragment() {
+class PhotoChoiceDialog(private val cameraListener: CameraListener, private val galleryListener: GalleryListener): DialogFragment() {
 
     private lateinit var photoCamera: ImageView
     private lateinit var photoGallery: ImageView
@@ -40,7 +42,7 @@ class PhotoChoiceDialog(private val cameraListener: CameraListener): DialogFragm
             requestCameraPermission()
         }
         photoGallery.setOnClickListener {
-            KToasty.warning(requireContext(), "Gallery", Toast.LENGTH_SHORT).show()
+            requestGalleryPermission()
         }
 
         builder.setTitle(R.string.choose_photo)
@@ -111,5 +113,64 @@ class PhotoChoiceDialog(private val cameraListener: CameraListener): DialogFragm
 
     interface CameraListener {
         fun applyCameraPhoto(bitmapPhoto: Bitmap)
+    }
+
+    /**-----------------------------------------------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+     *----------------------- Gallery permission -----------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Request Dexter gallery permission ---------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun requestGalleryPermission(){
+        Dexter.withContext(context)
+                .withPermission(READ_STORAGE)
+                .withListener(object: PermissionListener{
+                    override fun onPermissionGranted(permissionGrantedResponse: PermissionGrantedResponse?) {
+                        pickPhotoFromGallery()
+                    }
+
+                    override fun onPermissionDenied(permissionDeniedResponse: PermissionDeniedResponse?) {
+                        KToasty.error(requireContext(), getString(R.string.permission_denied_part_1) + " " + permissionDeniedResponse!!.permissionName
+                                + " " + getString(R.string.permission_denied_part_2),
+                                Toast.LENGTH_SHORT).show()
+                    }
+
+                    override fun onPermissionRationaleShouldBeShown(permissionRequest: PermissionRequest?, permissionToken: PermissionToken?) {}
+                }).check()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //------------------- Intent to access gallery -------------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun pickPhotoFromGallery() {
+        val accessGallery = Intent(Intent.ACTION_PICK)
+        accessGallery.type ="image/*"
+        galleryPermissionLauncher.launch(accessGallery)
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Handle gallery result ---------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private val galleryPermissionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()){
+        if (it.resultCode == Activity.RESULT_OK){
+            val uriPhoto = it.data?.data
+            galleryListener.applyGalleryPhoto(uriPhoto)
+            dismiss()
+        }
+        else{
+            KToasty.error(requireContext(), getString(R.string.gallery_denied), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    //-------------------------------- Gallery interface --------------------------------------------
+
+    interface GalleryListener {
+        fun applyGalleryPhoto(uriPhoto: Uri?)
     }
 }

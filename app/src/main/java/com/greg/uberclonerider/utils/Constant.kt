@@ -1,4 +1,4 @@
-package com.greg.uberclonerider
+package com.greg.uberclonerider.utils
 
 import android.Manifest
 
@@ -11,5 +11,6 @@ class Constant {
         const val INFO_CONNECTED = ".info/connected"
         //-------------------------------- Camera & gallery ----------------------------------------
         const val ACCESS_CAMERA = Manifest.permission.CAMERA
+        const val READ_STORAGE = Manifest.permission.READ_EXTERNAL_STORAGE
     }
 }

@@ -26,10 +26,10 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
-import com.greg.uberclonerider.Constant.Companion.ACCESS_FINE_LOCATION
-import com.greg.uberclonerider.Constant.Companion.DEFAULT_ZOOM
-import com.greg.uberclonerider.Constant.Companion.INFO_CONNECTED
-import com.greg.uberclonerider.Constant.Companion.RIDER_LOCATION
+import com.greg.uberclonerider.utils.Constant.Companion.ACCESS_FINE_LOCATION
+import com.greg.uberclonerider.utils.Constant.Companion.DEFAULT_ZOOM
+import com.greg.uberclonerider.utils.Constant.Companion.INFO_CONNECTED
+import com.greg.uberclonerider.utils.Constant.Companion.RIDER_LOCATION
 import com.greg.uberclonerider.R
 import com.greg.uberclonerider.databinding.FragmentHomeBinding
 import com.karumi.dexter.Dexter

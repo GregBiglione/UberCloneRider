@@ -1,4 +1,6 @@
-package com.greg.uberclonerider
+package com.greg.uberclonerider.utils
+
+import com.greg.uberclonerider.model.Rider
 
 object Common {
     var currentRider: Rider? = null

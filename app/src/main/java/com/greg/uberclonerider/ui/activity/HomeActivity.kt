@@ -21,9 +21,14 @@ import com.google.android.material.navigation.NavigationView
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.greg.uberclonerider.*
+import com.greg.uberclonerider.ui.dialog_box.LogOutDialog
+import com.greg.uberclonerider.ui.dialog_box.PhotoChoiceDialog
+import com.greg.uberclonerider.utils.Common
+import com.greg.uberclonerider.utils.ImageConverter
+import com.greg.uberclonerider.utils.SavePhoto
 import de.hdodenhof.circleimageview.CircleImageView
 
-class HomeActivity : AppCompatActivity(), PhotoChoiceDialog.CameraListener {
+class HomeActivity : AppCompatActivity(), PhotoChoiceDialog.CameraListener, PhotoChoiceDialog.GalleryListener {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var drawerLayout: DrawerLayout
@@ -33,6 +38,7 @@ class HomeActivity : AppCompatActivity(), PhotoChoiceDialog.CameraListener {
     private lateinit var photo: CircleImageView
     private lateinit var savePhoto: SavePhoto
     private var photoFromStorage: Uri? = null
+    private lateinit var imageConverter: ImageConverter
     //----------------------- Firebase storage -----------------------------------------------------
     private lateinit var storageReference: StorageReference
 
@@ -54,6 +60,7 @@ class HomeActivity : AppCompatActivity(), PhotoChoiceDialog.CameraListener {
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
         savePhoto = SavePhoto()
+        imageConverter = ImageConverter()
         setDriverInformation()
         clickOnNavItem()
     }
@@ -125,7 +132,7 @@ class HomeActivity : AppCompatActivity(), PhotoChoiceDialog.CameraListener {
     //----------------------------------------------------------------------------------------------
 
     private fun showPhotoChoiceDialog() {
-        val photoChoiceDialog = PhotoChoiceDialog(this)
+        val photoChoiceDialog = PhotoChoiceDialog(this, this)
         photoChoiceDialog.show(supportFragmentManager, "PhotoChoiceDialogBox")
     }
 
@@ -144,6 +151,17 @@ class HomeActivity : AppCompatActivity(), PhotoChoiceDialog.CameraListener {
     override fun applyCameraPhoto(bitmapPhoto: Bitmap) {
         photo.setImageBitmap(bitmapPhoto)
         val tempUri: Uri? = savePhoto.getImageUri(this, bitmapPhoto)
+        photoFromStorage = tempUri
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //----------------------- Get Uri from dialog box ----------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    override fun applyGalleryPhoto(uriPhoto: Uri?) {
+        photo.setImageURI(uriPhoto)
+        val bitmap = imageConverter.uriToBitmap(uriPhoto, this)
+        val tempUri: Uri? = savePhoto.getImageUri(this, bitmap)
         photoFromStorage = tempUri
     }
 }
