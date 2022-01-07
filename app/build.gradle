@@ -74,7 +74,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-storage-ktx'
 
     //----------------------- Firebase cloud messaging ---------------------------------------------
-    //implementation 'com.google.firebase:firebase-messaging-ktx'
+    implementation 'com.google.firebase:firebase-messaging-ktx'
 
     //----------------------- Firebase analytics ---------------------------------------------------
     implementation 'com.google.firebase:firebase-analytics-ktx'

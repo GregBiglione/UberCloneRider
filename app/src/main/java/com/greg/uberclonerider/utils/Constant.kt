@@ -12,5 +12,10 @@ class Constant {
         //-------------------------------- Camera & gallery ----------------------------------------
         const val ACCESS_CAMERA = Manifest.permission.CAMERA
         const val READ_STORAGE = Manifest.permission.READ_EXTERNAL_STORAGE
+        //-------------------------------- Notification --------------------------------------------
+        const val TOKEN = "Token"
+        const val NOTIFICATION_TITLE = "Title test FCM"
+        const val NOTIFICATION_BODY = "Message test FCM"
+        const val NOTIFICATION_CHANNEL_ID = "Uber_clone_channel"
     }
 }
