@@ -97,11 +97,30 @@ class HomeActivity : AppCompatActivity() {
         headerView = navView.getHeaderView(0)
         val name = headerView.findViewById<View>(R.id.name_tv) as TextView
         val phoneNumber = headerView.findViewById<View>(R.id.phone_tv) as TextView
-        //val rating = headerView.findViewById<View>(R.id.rating_tv) as TextView
         photo = headerView.findViewById<View>(R.id.photo) as CircleImageView
 
         name.text = Common.buildWelcomeMessage()
         phoneNumber.text = Common.currentRider!!.phoneNumber
+        setDriverPhoto()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Set driver photo --------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun setDriverPhoto(){
+        photo.setOnClickListener {
+            showPhotoChoiceDialog()
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Photo choice dialog box -------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun showPhotoChoiceDialog() {
+        val photoChoiceDialog = PhotoChoiceDialog()
+        photoChoiceDialog.show(supportFragmentManager, "PhotoChoiceDialogBox")
     }
 
     //----------------------------------------------------------------------------------------------
