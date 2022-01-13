@@ -27,6 +27,7 @@
     <string name="choose_photo">Choose a photo</string>
     <string name="permission_granted">Permission granted</string>
     <string name="permission_denied">Permission denied</string>
+    <string name="permission_location_required">Permission location required</string>
     <string name="camera_permission">Access camera granted</string>
     <string name="camera_denied">Access camera denied</string>
     <string name="camera_permission_message">We need your permission to access the camera</string>
@@ -52,4 +53,7 @@
     <string name="welcome">Welcome</string>
     <string name="permission_denied_part_1">Permission</string>
     <string name="permission_denied_part_2">was denied</string>
+
+    <string name="drivers_not_found">Drivers not found</string>
+    <string name="key_not_found">Key driver not found</string>
 </resources>

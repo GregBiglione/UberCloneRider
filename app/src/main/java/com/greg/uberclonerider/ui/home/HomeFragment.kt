@@ -1,45 +1,67 @@
 package com.greg.uberclonerider.ui.home
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import android.content.res.Resources
+import android.location.Address
+import android.location.Geocoder
+import android.location.Location
 import android.os.Bundle
 import android.os.Looper
+import android.text.TextUtils
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.droidman.ktoasty.KToasty
 import com.firebase.geofire.GeoFire
 import com.firebase.geofire.GeoLocation
+import com.firebase.geofire.GeoQuery
+import com.firebase.geofire.GeoQueryEventListener
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MapStyleOptions
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.greg.uberclonerider.R
+import com.greg.uberclonerider.callback.FirebaseDriverInformationListener
+import com.greg.uberclonerider.callback.FirebaseFailedListener
+import com.greg.uberclonerider.databinding.FragmentHomeBinding
+import com.greg.uberclonerider.model.DriverGeolocation
+import com.greg.uberclonerider.model.DriverInformation
+import com.greg.uberclonerider.model.GeolocationQuery
+import com.greg.uberclonerider.utils.Common
 import com.greg.uberclonerider.utils.Constant.Companion.ACCESS_FINE_LOCATION
 import com.greg.uberclonerider.utils.Constant.Companion.DEFAULT_ZOOM
+import com.greg.uberclonerider.utils.Constant.Companion.DRIVER_INFORMATION
+import com.greg.uberclonerider.utils.Constant.Companion.DRIVER_LOCATION
+import com.greg.uberclonerider.utils.Constant.Companion.GEO_CODER_TAG
 import com.greg.uberclonerider.utils.Constant.Companion.INFO_CONNECTED
+import com.greg.uberclonerider.utils.Constant.Companion.LIMIT_RANGE
 import com.greg.uberclonerider.utils.Constant.Companion.RIDER_LOCATION
-import com.greg.uberclonerider.R
-import com.greg.uberclonerider.databinding.FragmentHomeBinding
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionDeniedResponse
 import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.single.PermissionListener
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.schedulers.Schedulers
+import java.io.IOException
+import java.util.*
+import kotlin.collections.HashMap
 
-class HomeFragment : Fragment() {
+class HomeFragment : Fragment(), FirebaseDriverInformationListener{
 
     private lateinit var binding: FragmentHomeBinding
     private lateinit var homeViewModel: HomeViewModel
@@ -51,10 +73,31 @@ class HomeFragment : Fragment() {
     private lateinit var newPosition: LatLng
     private lateinit var userLocation: LatLng
     //------------------- Online system ------------------------------------------------------------
-    private lateinit var geoFire: GeoFire
+    private lateinit var riderGeoFire: GeoFire
+    private lateinit var driverGeoFire: GeoFire
+    private lateinit var geoQuery: GeoQuery
     private lateinit var onlineDatabaseReference: DatabaseReference
     private lateinit var currentRiderReference: DatabaseReference
     private lateinit var riderLocationReference: DatabaseReference
+    private lateinit var driverLocationReference: DatabaseReference
+    //------------------- Load available driver ----------------------------------------------------
+    private var distance = 1.0
+    private var previousLocation: Location? = null
+    private var currentLocation: Location? = null
+    private var firstTime = true
+    //------------------- Listener -----------------------------------------------------------------
+    lateinit var iFirebaseDriverInformationListener: FirebaseDriverInformationListener
+    lateinit var iFirebaseFailedListener: FirebaseFailedListener
+    //------------------- Geo coder ----------------------------------------------------------------
+    private lateinit var geoCoder: Geocoder
+    private var cityName: String = ""
+    private var lat: Double = 0.0
+    private var lng: Double = 0.0
+    private lateinit var locationResultPosition: Location
+    private var driverFound: MutableSet<DriverGeolocation> = HashSet()
+    private lateinit var riderLocation: Location
+    private var markerList: MutableMap<String, Marker> = HashMap()
+    private lateinit var driverGeo: DriverGeolocation
 
     override fun onCreateView(
             inflater: LayoutInflater,
@@ -121,9 +164,10 @@ class HomeFragment : Fragment() {
     //----------------------------------------------------------------------------------------------
 
     private fun getLocationRequest(){
-        getDriverLocationFromDatabase()
-        getRealTimeLocation()
+        getRiderLocationFromDatabase()
+        getRealTimeRiderLocation()
         registerOnlineSystem()
+        iFirebaseDriverInformationListener()
         locationRequest = LocationRequest.create()
         locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         locationRequest.fastestInterval = 3000
@@ -142,6 +186,7 @@ class HomeFragment : Fragment() {
         override fun onLocationResult(locationResult: LocationResult) {
             super.onLocationResult(locationResult)
 
+            locationResultPosition = locationResult.lastLocation
             newPosition = LatLng(locationResult.lastLocation.latitude, locationResult.lastLocation.longitude)
             map.addMarker(MarkerOptions()
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
@@ -149,10 +194,12 @@ class HomeFragment : Fragment() {
             )
             moveCamera()
             zoomOnLocation()
+            //------------------- Calculate distance  ----------------------------------------------
+            calculateDistance()
             //------------------- Update real time location  ---------------------------------------
-            geoFire.setLocation(
+            riderGeoFire.setLocation(
                 FirebaseAuth.getInstance().currentUser!!.uid, GeoLocation(locationResult.lastLocation.latitude, locationResult.lastLocation.longitude)
-            ){key: String?, databaseError: DatabaseError? ->
+            ){ _: String?, databaseError: DatabaseError? ->
                 if (databaseError != null){
                     Snackbar.make(mapFragment.requireView(), databaseError.message, Snackbar.LENGTH_LONG).show()
                 }
@@ -173,6 +220,7 @@ class HomeFragment : Fragment() {
     private fun createLocationService() {
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
         fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper()!!)
+        loadAvailableDrivers()
     }
 
     override fun onDestroy() {
@@ -229,6 +277,7 @@ class HomeFragment : Fragment() {
                     permissionToken: PermissionToken?
                 ) {}
             }).check()
+        enableZoom()
     }
 
     //----------------------------------------------------------------------------------------------
@@ -239,6 +288,14 @@ class HomeFragment : Fragment() {
         binding.gps.setOnClickListener {
             lastKnownLocation()
         }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Enable zoom -------------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun enableZoom(){
+        map.uiSettings.isZoomControlsEnabled = true
     }
 
     /**-----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -268,7 +325,7 @@ class HomeFragment : Fragment() {
     //----------------------------------------------------------------------------------------------
 
     private fun removeLocation(){
-        geoFire.removeLocation(FirebaseAuth.getInstance().currentUser!!.uid)
+        riderGeoFire.removeLocation(FirebaseAuth.getInstance().currentUser!!.uid)
     }
 
     //----------------------------------------------------------------------------------------------
@@ -296,7 +353,7 @@ class HomeFragment : Fragment() {
     //-------------------------------- Get rider's location from database --------------------------
     //----------------------------------------------------------------------------------------------
 
-    private fun getDriverLocationFromDatabase(){
+    private fun getRiderLocationFromDatabase(){
         onlineDatabaseReference = FirebaseDatabase.getInstance().reference.child(INFO_CONNECTED)
         riderLocationReference = FirebaseDatabase.getInstance().getReference(RIDER_LOCATION)
         currentRiderReference = FirebaseDatabase.getInstance().reference.child(
@@ -305,10 +362,312 @@ class HomeFragment : Fragment() {
     }
 
     //----------------------------------------------------------------------------------------------
+    //-------------------------------- Get rider's realtime location ------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun getRealTimeRiderLocation(){
+        riderGeoFire = GeoFire(riderLocationReference)
+    }
+
+    /**-----------------------------------------------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+     *----------------------- Calculate distance between previous & current location -----------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Calculate distance  -----------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun calculateDistance(){
+        if (firstTime){
+            previousLocation = locationResultPosition
+            currentLocation = locationResultPosition
+            firstTime = false
+        }
+        else{
+            previousLocation = currentLocation
+            currentLocation = locationResultPosition
+        }
+        if (previousLocation!!.distanceTo(currentLocation)/1000 <= LIMIT_RANGE){
+            loadAvailableDrivers()
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Load available drivers --------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun loadAvailableDrivers(){
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            return
+        }
+        fusedLocationProviderClient.lastLocation
+                .addOnSuccessListener { location ->
+                    //-------------------------------- Get city ------------------------------------
+                    if (location != null) {
+                        riderLocation = location
+                        getCityNameFromLocation(location.latitude, location.longitude)
+                    }
+
+                }
+                .addOnFailureListener { e ->
+                    Snackbar.make(requireView(), e.message!!, Snackbar.LENGTH_SHORT).show()
+                }
+    }
+
+    /**-----------------------------------------------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+     *----------------------- Geo coder --------------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Geo coder ---------------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun initializeGeoCoder(){
+        geoCoder = Geocoder(requireContext(), Locale.getDefault())
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Get city name from location ---------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun getCityNameFromLocation(latitude: Double, longitude: Double): String {
+        initializeGeoCoder()
+        lat = latitude
+        lng = longitude
+        try {
+            val addressList = geoCoder.getFromLocation(latitude, longitude, 1)
+            if (addressList != null && addressList.size > 0){
+                val address = (addressList as MutableList<Address>)[0]
+
+                if (address.adminArea == null){
+                    cityName = address.locality
+                    //-------------------------------- Load all drivers in city --------------------
+                    getDriverLocationFromDatabase()
+                }
+                if (address.locality == null){
+                    cityName = address.adminArea
+                    //-------------------------------- Load all drivers in city --------------------
+                    getDriverLocationFromDatabase()
+                }
+            }
+
+        } catch (e: IOException) {
+            Log.e(GEO_CODER_TAG, "Unable to connect to GeoCoder", e)
+        }
+        return cityName
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Get driver's location from database -------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun getDriverLocationFromDatabase(){
+        driverLocationReference = FirebaseDatabase.getInstance()
+                .getReference(DRIVER_LOCATION)
+                .child(cityName)
+        getRealTimeDriverLocation()
+    }
+
+    //----------------------------------------------------------------------------------------------
     //-------------------------------- Get driver's realtime location ------------------------------
     //----------------------------------------------------------------------------------------------
 
-    private fun getRealTimeLocation(){
-        geoFire = GeoFire(riderLocationReference)
+    private fun getRealTimeDriverLocation(){
+        driverGeoFire = GeoFire(driverLocationReference)
+        driverGeoQuery()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Geo query ---------------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun driverGeoQuery(){
+        geoQuery = driverGeoFire.queryAtLocation(GeoLocation(lat, lng), distance)
+        geoQuery.removeAllListeners()
+        addGeoQueryEventListener()
+        addChildEventListener()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Add geo query event listener --------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun addGeoQueryEventListener(){
+        geoQuery.addGeoQueryEventListener(object: GeoQueryEventListener{
+            override fun onKeyEntered(key: String?, location: GeoLocation?) {
+                driverFound.add(DriverGeolocation(key!!, location!!))
+            }
+
+            override fun onKeyExited(key: String?) {}
+
+            override fun onKeyMoved(key: String?, location: GeoLocation?) {}
+
+            override fun onGeoQueryReady() {
+                if (distance <= LIMIT_RANGE){
+                    distance++
+                    loadAvailableDrivers()
+                }
+                else{
+                    distance = 0.0
+                    addDriverMarker()
+                }
+            }
+
+            override fun onGeoQueryError(error: DatabaseError?) {
+                Snackbar.make(requireView(), error!!.message, Snackbar.LENGTH_SHORT).show()
+            }
+
+        })
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Add children event listener ---------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun addChildEventListener(){
+        driverLocationReference.addChildEventListener(object : ChildEventListener {
+            override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                val geolocationQuery = snapshot.getValue(GeolocationQuery::class.java)
+                val geolocation = GeoLocation(geolocationQuery!!.l!![0], geolocationQuery.l!![1])
+                val driverGeolocation = DriverGeolocation(snapshot.key, geolocation)
+
+                val newDriverGeolocation = Location("")
+                newDriverGeolocation.latitude = geolocation.latitude
+                newDriverGeolocation.longitude = geolocation.longitude
+
+                val newDistance = riderLocation.distanceTo(newDriverGeolocation)/1000
+                if (newDistance <= LIMIT_RANGE){
+                    findDriverByKey(driverGeolocation)
+                }
+            }
+
+            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {}
+
+            override fun onChildRemoved(snapshot: DataSnapshot) {}
+
+            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+
+            override fun onCancelled(error: DatabaseError) {
+                Snackbar.make(requireView(), error.message, Snackbar.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Add driver marker -------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun addDriverMarker() {
+        //Log.d("Driver found size mk", driverFound.size.toString())
+        if (driverFound.size > 0){
+            Observable.fromIterable(driverFound)
+                    .subscribeOn(Schedulers.newThread())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(
+                            { driverGeolocation: DriverGeolocation? ->
+                                Log.d("Driver info in obs 1", driverGeolocation!!.driverInformation.toString())
+                                findDriverByKey(driverGeolocation)
+                            },
+                            {
+                                t: Throwable? ->
+                                Snackbar.make(requireView(), t!!.message!!, Snackbar.LENGTH_SHORT).show()
+                            }
+                    )
+
+        }
+        else{
+            Snackbar.make(requireView(), getString(R.string.drivers_not_found), Snackbar.LENGTH_SHORT).show()
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Find available driver ---------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun findDriverByKey(driverGeolocation: DriverGeolocation?) {
+        FirebaseDatabase.getInstance()
+                .getReference(DRIVER_INFORMATION)
+                .child(driverGeolocation!!.key!!)
+                .addListenerForSingleValueEvent(object: ValueEventListener{
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        if (snapshot.hasChildren()){
+                            driverGeolocation.driverInformation = (snapshot.getValue(DriverInformation::class.java))
+                            iFirebaseDriverInformationListener.onDriverInformationLoadSuccess(driverGeolocation)
+                        }
+                        else{
+                            iFirebaseFailedListener.onFirebaseFailed(getString(R.string.key_not_found) + driverGeolocation.key)
+                        }
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        iFirebaseFailedListener.onFirebaseFailed(error.message)
+                    }
+
+                })
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Firebase driver information listener ------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun iFirebaseDriverInformationListener(){
+        iFirebaseDriverInformationListener = this
+    }
+
+    override fun onDriverInformationLoadSuccess(driverGeolocation: DriverGeolocation?) {
+        val key = driverGeolocation!!.key
+        driverGeo = driverGeolocation
+        Log.d("Marker list", markerList.containsKey(key).toString())
+        if (!markerList.containsKey(key)){
+            markerList[key!!] = map.addMarker(
+                    MarkerOptions()
+                            .position(LatLng(driverGeolocation.geoLocation!!.latitude, driverGeolocation.geoLocation!!.longitude))
+                            .flat(true)
+                            .title(Common.buildDriverName(
+                                    driverGeolocation.driverInformation!!.firstName,
+                                    driverGeolocation.driverInformation!!.lastName)
+                            )
+                            .snippet(driverGeolocation.driverInformation!!.phoneNumber)
+                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.vader_tie))
+            )!!
+        }
+        if (!TextUtils.isEmpty(cityName)){
+            removeDriverLocationMarker()
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Get driver's location ---------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun removeDriverLocationMarker(){
+        val driverLocation = FirebaseDatabase.getInstance()
+                .getReference(DRIVER_LOCATION)
+                .child(cityName)
+                .child(driverGeo.key!!)
+        driverLocation.addValueEventListener(object: ValueEventListener{
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (!snapshot.hasChildren()){
+                    if (markerList[driverGeo.key!!] != null){
+                        val marker = markerList[driverGeo.key!!]
+                        marker!!.remove()
+                        markerList.remove(driverGeo.key!!)
+                        driverLocation.removeEventListener(this)
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Snackbar.make(requireView(), error.message, Snackbar.LENGTH_LONG).show()
+            }
+
+        })
     }
 }

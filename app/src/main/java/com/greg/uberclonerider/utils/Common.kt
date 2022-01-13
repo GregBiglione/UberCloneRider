@@ -17,6 +17,10 @@ import com.greg.uberclonerider.utils.Constant.Companion.NOTIFICATION_CHANNEL_ID
 object Common {
     var currentRider: Rider? = null
 
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Welcome message builder -------------------------------------
+    //----------------------------------------------------------------------------------------------
+
     fun buildWelcomeMessage(): String {
         return StringBuilder("Welcome")
             .append(" ")
@@ -25,6 +29,10 @@ object Common {
             .append(currentRider!!.lastName!!.trim())
             .toString()
     }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Notification ------------------------------------------------
+    //----------------------------------------------------------------------------------------------
 
     fun showNotification(context: Context, id: Int, title: String?, body: String?, intent: Intent?) {
         var pendingIntent: PendingIntent? = null
@@ -65,5 +73,16 @@ object Common {
             val notification = notificationBuilder.build()
             notificationManager.notify(id, notification)
         }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Driver name builder -----------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    fun buildDriverName(firstName: String?, lastName: String?): String? {
+        return StringBuilder(firstName!!)
+                .append(" ")
+                .append(lastName)
+                .toString()
     }
 }
