@@ -25,5 +25,8 @@ class Constant {
         const val LIMIT_RANGE = 10.0
         //-------------------------------- Log -----------------------------------------------------
         const val GEO_CODER_TAG = "GeoCodingLocation"
+        //-------------------------------- Url -----------------------------------------------------
+        const val BASE_URL = "https://maps.googleapis.com/"
+
     }
 }
