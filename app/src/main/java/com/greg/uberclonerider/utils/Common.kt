@@ -103,7 +103,7 @@ object Common {
     //-------------------------------- Decode poly -------------------------------------------------
     //----------------------------------------------------------------------------------------------
 
-    fun decodePoly(encoded: String): List<LatLng?> {
+    fun decodePoly(encoded: String): ArrayList<LatLng?> {
         val poly = ArrayList<LatLng?>()
         var index = 0
         val len = encoded.length
@@ -159,4 +159,28 @@ object Common {
         }
         return (-1).toFloat()
     }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Driver from builder -----------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    fun buildDriverFrom(fromLat: Double?, fromLng: Double?): String {
+        return StringBuilder(fromLat.toString())
+                .append(",")
+                .append(fromLng.toString())
+                .toString()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Driver to builder -------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    fun buildDriverTo(toLat: Double?, toLng: Double?): String {
+        return StringBuilder(toLat.toString())
+                .append(",")
+                .append(toLng.toString())
+                .toString()
+    }
+
+
 }
