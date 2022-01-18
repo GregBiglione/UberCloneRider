@@ -9,7 +9,6 @@ import android.location.Address
 import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
-import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
 import android.util.Log
@@ -109,16 +108,16 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
     private var driverSubscribe: MutableMap<String, Animation> = HashMap()
     private val compositeDisposable = CompositeDisposable()
     private lateinit var iRetrofitService: RetrofitService
-    private var polylineList: ArrayList<LatLng?>? = null
-    private var handler: Handler? = null
-    private var index: Int = 0
-    private var next: Int = 0
-    private var v: Float = 0.0f
-    private var latMove: Double = 0.0
-    private var lngMove: Double = 0.0
+    //private var polylineList: ArrayList<LatLng?>? = null
+    //private var handler: Handler? = null
+    //private var index: Int = 0
+    //private var next: Int = 0
+    //private var v: Float = 0.0f
+    //private var latMove: Double = 0.0
+    //private var lngMove: Double = 0.0
     //------------------- Runnable -----------------------------------------------------------------
-    private lateinit var start: LatLng
-    private lateinit var end: LatLng
+    //private lateinit var start: LatLng
+    //private lateinit var end: LatLng
     private lateinit var newKey : String
     private var newMarker: Marker? = null
     private lateinit var newAnimation : Animation
@@ -259,12 +258,14 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
     private fun lastKnownLocation(){
         fusedLocationProviderClient.lastLocation
             .addOnSuccessListener { location ->
-                userLocation = LatLng(location.latitude, location.longitude)
-                map.addMarker(MarkerOptions()
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
-                    .position(userLocation)
-                )
-                moveCameraToLastKnownLocation()
+                if (location != null) {
+                    userLocation = LatLng(location.latitude, location.longitude)
+                    map.addMarker(MarkerOptions()
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                        .position(userLocation)
+                    )
+                    moveCameraToLastKnownLocation()
+                }
             }.addOnFailureListener { e ->
                 KToasty.error(requireContext(), "$e.message",
                     Toast.LENGTH_SHORT).show()
@@ -766,14 +767,15 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
                                 val route = jsonArray.getJSONObject(j)
                                 val poly = route.getJSONObject("overview_polyline")
                                 val polyline = poly.getString("points")
-                                polylineList = Common.decodePoly(polyline)
+                                //polylineList = Common.decodePoly(polyline)
+                                newData.polylineList = Common.decodePoly(polyline)
                             }
                             //-------------------------------- Moving ------------------------------
-                            handler = Handler(Looper.getMainLooper())
-                            index = -1
-                            next = 1
+                            //handler = Handler(Looper.getMainLooper())
+                            newData.index = -1
+                            newData.next = 1
 
-                            handler!!.postDelayed(runnable, 1500)
+                            newData.handler.postDelayed(runnable, 1500)
 
                         } catch (e: Exception) {
                             Snackbar.make(requireView(), e.message!!, Snackbar.LENGTH_LONG).show()
@@ -781,7 +783,6 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
 
                     }
             )
-
         }
     }
 
@@ -791,33 +792,33 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
 
     private val runnable = object : Runnable{
         override fun run() {
-            if (polylineList!!.size > 1){
-                if (index < polylineList!!.size - 2){
-                    index++
-                    next = index+1
-                    start = polylineList!![index]!!
-                    end = polylineList!![next]!!
+            if (newAnimation.polylineList != null && newAnimation.polylineList!!.size > 1){
+                if (newAnimation.index < newAnimation.polylineList!!.size - 2){
+                    newAnimation.index++
+                    newAnimation.next = newAnimation.index+1
+                    newAnimation.start = newAnimation.polylineList!![newAnimation.index]!!
+                    newAnimation.end = newAnimation.polylineList!![newAnimation.next]!!
                 }
 
                 val valueAnimator = ValueAnimator.ofInt(0, 1)
                 valueAnimator.duration = 3000
                 valueAnimator.interpolator = LinearInterpolator()
                 valueAnimator.addUpdateListener { value ->
-                    v = value.animatedFraction
-                    latMove = v * end.latitude + (1-v) * start.latitude
-                    lngMove = v * end.longitude + (1-v) * start.longitude
-                    val newPosition = LatLng(latMove, lngMove)
+                    newAnimation.v = value.animatedFraction
+                    newAnimation.latMove = newAnimation.v * newAnimation.end.latitude + (1-newAnimation.v) * newAnimation.start.latitude
+                    newAnimation.lngMove = newAnimation.v * newAnimation.end.longitude + (1-newAnimation.v) * newAnimation.start.longitude
+                    val newPosition = LatLng(newAnimation.latMove, newAnimation.lngMove)
                     newMarker!!.position = newPosition
                     newMarker!!.setAnchor(0.5f, 0.5f)
-                    newMarker!!.rotation = Common.getBearing(start, newPosition)
+                    newMarker!!.rotation = Common.getBearing(newAnimation.start, newPosition)
                 }
 
                 valueAnimator.start()
 
-                if (index < polylineList!!.size - 2){
-                    handler!!.postDelayed(this, 1500)
+                if (newAnimation.index < newAnimation.polylineList!!.size - 2){
+                    newAnimation.handler.postDelayed(this, 1500)
                 }
-                else if (index < polylineList!!.size - 1){
+                else if (newAnimation.index < newAnimation.polylineList!!.size - 1){
                     newAnimation.isRunning = false
                     //-------------------------------- Update --------------------------------------
                     driverSubscribe[newKey] = newAnimation
