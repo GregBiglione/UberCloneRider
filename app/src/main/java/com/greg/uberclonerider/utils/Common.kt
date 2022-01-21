@@ -9,6 +9,7 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Build
+import android.widget.TextView
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.maps.model.LatLng
 import com.greg.uberclonerider.R
@@ -16,6 +17,8 @@ import com.greg.uberclonerider.model.Rider
 import com.greg.uberclonerider.utils.Constant.Companion.NOTIFICATION_CHANNEL_ID
 import java.lang.Math.abs
 import java.lang.Math.atan
+import java.util.*
+import kotlin.collections.ArrayList
 
 
 object Common {
@@ -182,5 +185,15 @@ object Common {
                 .toString()
     }
 
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Autocomplete welcome builder --------------------------------
+    //----------------------------------------------------------------------------------------------
 
+    fun setWelcomeMessage(textView: TextView) {
+        when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
+            in 2..12 -> textView.text = StringBuilder("Good morning")
+            in 13..17 -> textView.text = StringBuilder("Good afternoon")
+            else -> textView.text = StringBuilder("Good evening")
+        }
+    }
 }

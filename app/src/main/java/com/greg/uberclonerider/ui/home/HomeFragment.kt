@@ -25,12 +25,17 @@ import com.firebase.geofire.GeoFire
 import com.firebase.geofire.GeoLocation
 import com.firebase.geofire.GeoQuery
 import com.firebase.geofire.GeoQueryEventListener
+import com.google.android.gms.common.api.Status
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
@@ -58,6 +63,7 @@ import com.karumi.dexter.listener.PermissionDeniedResponse
 import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.single.PermissionListener
+import com.sothree.slidinguppanel.SlidingUpPanelLayout
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
@@ -73,6 +79,9 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
     private lateinit var homeViewModel: HomeViewModel
     private lateinit var map: GoogleMap
     private lateinit var mapFragment: SupportMapFragment
+    //------------------- Sliding up panel ---------------------------------------------------------
+    private lateinit var slidingUpPanelLayout: SlidingUpPanelLayout
+    private lateinit var autocompleteFragment: AutocompleteSupportFragment
     //------------------- Location -----------------------------------------------------------------
     private lateinit var locationRequest: LocationRequest
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
@@ -108,16 +117,7 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
     private var driverSubscribe: MutableMap<String, Animation> = HashMap()
     private val compositeDisposable = CompositeDisposable()
     private lateinit var iRetrofitService: RetrofitService
-    //private var polylineList: ArrayList<LatLng?>? = null
-    //private var handler: Handler? = null
-    //private var index: Int = 0
-    //private var next: Int = 0
-    //private var v: Float = 0.0f
-    //private var latMove: Double = 0.0
-    //private var lngMove: Double = 0.0
     //------------------- Runnable -----------------------------------------------------------------
-    //private lateinit var start: LatLng
-    //private lateinit var end: LatLng
     private lateinit var newKey : String
     private var newMarker: Marker? = null
     private lateinit var newAnimation : Animation
@@ -131,6 +131,7 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
             ViewModelProvider(this)[HomeViewModel::class.java]
         binding = FragmentHomeBinding.inflate(layoutInflater)
         getLocationRequest()
+        initializeViews(binding.root)
         return binding.root
     }
 
@@ -190,6 +191,7 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
         getRiderLocationFromDatabase()
         getRealTimeRiderLocation()
         registerOnlineSystem()
+        initializePlaces()
         initializeRetrofit()
         iFirebaseDriverInformationListener()
         locationRequest = LocationRequest.create()
@@ -322,6 +324,7 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
 
     private fun enableZoom(){
         map.uiSettings.isZoomControlsEnabled = true
+        map.setPadding(16, 16, 0, 166)
     }
 
     /**-----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -409,6 +412,8 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
         if (firstTime){
             previousLocation = locationResultPosition
             currentLocation = locationResultPosition
+            //-------------------------------- Restrict places in country  -------------------------
+            setRestrictPlacesInCountry(locationResultPosition)
             firstTime = false
         }
         else{
@@ -494,10 +499,15 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
     //----------------------------------------------------------------------------------------------
 
     private fun getDriverLocationFromDatabase(){
-        driverLocationReference = FirebaseDatabase.getInstance()
-                .getReference(DRIVER_LOCATION)
-                .child(cityName)
-        getRealTimeDriverLocation()
+        if (!TextUtils.isEmpty(cityName)) {
+            driverLocationReference = FirebaseDatabase.getInstance()
+                    .getReference(DRIVER_LOCATION)
+                    .child(cityName)
+            getRealTimeDriverLocation()
+        }
+        else{
+            Snackbar.make(requireView(), getString(R.string.city_name_not_found), Snackbar.LENGTH_SHORT).show()
+        }
     }
 
     //----------------------------------------------------------------------------------------------
@@ -771,7 +781,6 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
                                 newData.polylineList = Common.decodePoly(polyline)
                             }
                             //-------------------------------- Moving ------------------------------
-                            //handler = Handler(Looper.getMainLooper())
                             newData.index = -1
                             newData.next = 1
 
@@ -824,6 +833,70 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
                     driverSubscribe[newKey] = newAnimation
                 }
             }
+        }
+    }
+
+    /**-----------------------------------------------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+     *----------------------- Autocomplete -------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Initialize views --------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun initializeViews(view: View){
+        slidingUpPanelLayout = view.findViewById(R.id.activity_main) as SlidingUpPanelLayout
+        Common.setWelcomeMessage(binding.welcomeTv)
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Initialize places -------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun initializePlaces(){
+        Places.initialize(requireContext(), getString(R.string.ApiKey))
+        initializeAutocomplete()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Initialize autocomplete -------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun initializeAutocomplete() {
+        autocompleteFragment = childFragmentManager.findFragmentById(R.id.autocomplete) as AutocompleteSupportFragment
+        autocompleteFragment.setPlaceFields(listOf(
+                Place.Field.ID,
+                Place.Field.ADDRESS,
+                Place.Field.LAT_LNG,
+                Place.Field.NAME
+        ))
+
+        autocompleteFragment.setOnPlaceSelectedListener(object: PlaceSelectionListener{
+            override fun onError(status: Status) {
+                Snackbar.make(requireView(), status.statusMessage!!, Snackbar.LENGTH_LONG).show()
+            }
+
+            override fun onPlaceSelected(place: Place) {
+                Snackbar.make(requireView(), "" + place.latLng, Snackbar.LENGTH_LONG).show()
+            }
+        })
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Restrict places in country  ---------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun setRestrictPlacesInCountry(location: Location?){
+        initializeGeoCoder()
+        try {
+            val addressList = geoCoder.getFromLocation(location!!.latitude, location.longitude, 1)
+            if (addressList.size > 0){
+                autocompleteFragment.setCountry(addressList[0].countryCode)
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
     }
 }
