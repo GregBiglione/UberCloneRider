@@ -51,12 +51,14 @@ import com.greg.uberclonerider.R
 import com.greg.uberclonerider.callback.FirebaseDriverInformationListener
 import com.greg.uberclonerider.callback.FirebaseFailedListener
 import com.greg.uberclonerider.databinding.FragmentHomeBinding
+import com.greg.uberclonerider.event.SelectedPlaceEvent
 import com.greg.uberclonerider.model.Animation
 import com.greg.uberclonerider.model.DriverGeolocation
 import com.greg.uberclonerider.model.DriverInformation
 import com.greg.uberclonerider.model.GeolocationQuery
 import com.greg.uberclonerider.remote.RetrofitService
 import com.greg.uberclonerider.ui.activity.HomeActivity
+import com.greg.uberclonerider.ui.activity.RequestDriverActivity
 import com.greg.uberclonerider.utils.Common
 import com.greg.uberclonerider.utils.Constant.Companion.ACCESS_FINE_LOCATION
 import com.greg.uberclonerider.utils.Constant.Companion.DEFAULT_ZOOM
@@ -77,6 +79,7 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.core.Observable
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
+import org.greenrobot.eventbus.EventBus
 import org.json.JSONObject
 import java.io.IOException
 import java.util.*
@@ -130,6 +133,10 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
     private lateinit var newKey : String
     private var newMarker: Marker? = null
     private lateinit var newAnimation : Animation
+    //------------------- Estimates routes ---------------------------------------------------------
+    private lateinit var selectedPlace: Place
+    private lateinit var origin: LatLng
+    private lateinit var destination: LatLng
 
     override fun onCreateView(
             inflater: LayoutInflater,
@@ -888,11 +895,13 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
             override fun onError(status: Status) {
                 Snackbar.make(requireView(), status.statusMessage!!, Snackbar.LENGTH_LONG).show()
                 Log.e("Error status", status.statusMessage!!)
-                //goBackAfterClickOnPlaceAutoCompleteBackArrow()
             }
 
             override fun onPlaceSelected(place: Place) {
-                Snackbar.make(requireView(), "" + place.latLng, Snackbar.LENGTH_LONG).show()
+                //Snackbar.make(requireView(), "" + place.latLng, Snackbar.LENGTH_LONG).show()
+                selectedPlace = place
+                calculateRoute()
+                EventBus.getDefault().post(SelectedPlaceEvent(origin, destination))
             }
         })
     }
@@ -913,7 +922,33 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
         }
     }
 
+    /**-----------------------------------------------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+     *----------------------- Estimate routes --------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
     //----------------------------------------------------------------------------------------------
+    //-------------------------------- calculate routes --------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun calculateRoute(){
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            Snackbar.make(mapFragment.requireView(), getString(R.string.permission_location_required), Snackbar.LENGTH_LONG).show() //TODO check if no crash with Sb
+            return
+        }
+        fusedLocationProviderClient.lastLocation.addOnSuccessListener { location ->
+            origin = LatLng(location.latitude, location.longitude)
+            destination = LatLng(selectedPlace.latLng!!.latitude, selectedPlace.latLng!!.longitude)
+
+            startActivity(Intent(requireContext(), RequestDriverActivity::class.java))
+        }
+    }
+
+    /*//----------------------------------------------------------------------------------------------
     //-------------------------------- Intent to access camera -------------------------------------
     //----------------------------------------------------------------------------------------------
 
@@ -942,5 +977,5 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
             return
         }
         super.onActivityResult(requestCode, resultCode, data)
-    }
+    }*/
 }

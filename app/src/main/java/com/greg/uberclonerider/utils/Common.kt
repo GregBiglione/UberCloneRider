@@ -196,4 +196,26 @@ object Common {
             else -> textView.text = StringBuilder("Good evening")
         }
     }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Origin route builder ----------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    fun buildRouteOrigin(origin: LatLng): String {
+        return StringBuilder(origin.latitude.toString()) //TODO check if  there's no problem with toString() l205, 207, 216, 218
+                .append(",")
+                .append(origin.longitude.toString())
+                .toString()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Destination route builder -----------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    fun buildRouteDestination(destination: LatLng): String {
+        return StringBuilder(destination.latitude.toString())
+                .append(",")
+                .append(destination.longitude.toString())
+                .toString()
+    }
 }
