@@ -3,13 +3,18 @@ package com.greg.uberclonerider.ui.home
 import android.Manifest
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.ContentValues.TAG
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Resources
+import android.graphics.Bitmap
 import android.location.Address
 import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
 import android.os.Looper
+import android.provider.MediaStore
 import android.text.TextUtils
 import android.util.Log
 import android.view.LayoutInflater
@@ -17,6 +22,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.LinearInterpolator
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -34,6 +40,8 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.Autocomplete
+import com.google.android.libraries.places.widget.AutocompleteActivity
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import com.google.android.material.snackbar.Snackbar
@@ -48,6 +56,7 @@ import com.greg.uberclonerider.model.DriverGeolocation
 import com.greg.uberclonerider.model.DriverInformation
 import com.greg.uberclonerider.model.GeolocationQuery
 import com.greg.uberclonerider.remote.RetrofitService
+import com.greg.uberclonerider.ui.activity.HomeActivity
 import com.greg.uberclonerider.utils.Common
 import com.greg.uberclonerider.utils.Constant.Companion.ACCESS_FINE_LOCATION
 import com.greg.uberclonerider.utils.Constant.Companion.DEFAULT_ZOOM
@@ -838,7 +847,7 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
 
     /**-----------------------------------------------------------------------------------------------------------------------------------------------------
      *------------------------------------------------------------------------------------------------------------------------------------------------------
-     *----------------------- Autocomplete -------------------------------------------------------------------------------------------------------------
+     *----------------------- Autocomplete -----------------------------------------------------------------------------------------------------------------
      *------------------------------------------------------------------------------------------------------------------------------------------------------
     ------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
@@ -858,6 +867,8 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
     private fun initializePlaces(){
         Places.initialize(requireContext(), getString(R.string.ApiKey))
         initializeAutocomplete()
+        /*val intent = Intent(requireContext(), HomeActivity::class.java)
+        startActivityForResult(intent, AUTOCOMPLETE_REQUEST_CODE)*/
     }
 
     //----------------------------------------------------------------------------------------------
@@ -876,6 +887,8 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
         autocompleteFragment.setOnPlaceSelectedListener(object: PlaceSelectionListener{
             override fun onError(status: Status) {
                 Snackbar.make(requireView(), status.statusMessage!!, Snackbar.LENGTH_LONG).show()
+                Log.e("Error status", status.statusMessage!!)
+                //goBackAfterClickOnPlaceAutoCompleteBackArrow()
             }
 
             override fun onPlaceSelected(place: Place) {
@@ -898,5 +911,36 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
         } catch (e: IOException) {
             e.printStackTrace()
         }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Intent to access camera -------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    val AUTOCOMPLETE_REQUEST_CODE = 1548
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == AUTOCOMPLETE_REQUEST_CODE) {
+            when (resultCode) {
+                Activity.RESULT_OK -> {
+                    data?.let {
+                        val place = Autocomplete.getPlaceFromIntent(data)
+                        Log.i(TAG, "Place: ${place.name}, ${place.id}")
+                    }
+                }
+                AutocompleteActivity.RESULT_ERROR -> {
+                    // TODO: Handle the error.
+                    data?.let {
+                        val status = Autocomplete.getStatusFromIntent(data)
+                        Log.i(TAG, status.statusMessage!!)
+                    }
+                }
+                Activity.RESULT_CANCELED -> {
+                    Log.i(TAG, "Search cancelled")
+                }
+            }
+            return
+        }
+        super.onActivityResult(requestCode, resultCode, data)
     }
 }
