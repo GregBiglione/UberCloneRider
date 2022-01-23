@@ -64,4 +64,10 @@
     <string name="good_evening">Good evening</string>
     <string name="title_activity_request_driver">Map</string>
     <string name="impossible_to_estimate_routes">Impossible to estimate route</string>
+    <string name="load_map_style_failed">Load map style failed</string>
+    <string name="_5_min">5 min</string>
+    <string name="very_very_very_long_text">Very very very long text</string>
+    <string name="navigation_next">Navigation next</string>
+    <string name="map_tie">Vador Tie fighter</string>
+    <string name="flamengo">Flamengo</string>
 </resources>

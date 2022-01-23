@@ -3,18 +3,14 @@ package com.greg.uberclonerider.ui.home
 import android.Manifest
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Resources
-import android.graphics.Bitmap
 import android.location.Address
 import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
 import android.os.Looper
-import android.provider.MediaStore
 import android.text.TextUtils
 import android.util.Log
 import android.view.LayoutInflater
@@ -22,7 +18,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.LinearInterpolator
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -40,8 +35,6 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.widget.Autocomplete
-import com.google.android.libraries.places.widget.AutocompleteActivity
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import com.google.android.material.snackbar.Snackbar
@@ -57,7 +50,6 @@ import com.greg.uberclonerider.model.DriverGeolocation
 import com.greg.uberclonerider.model.DriverInformation
 import com.greg.uberclonerider.model.GeolocationQuery
 import com.greg.uberclonerider.remote.RetrofitService
-import com.greg.uberclonerider.ui.activity.HomeActivity
 import com.greg.uberclonerider.ui.activity.RequestDriverActivity
 import com.greg.uberclonerider.utils.Common
 import com.greg.uberclonerider.utils.Constant.Companion.ACCESS_FINE_LOCATION
@@ -901,7 +893,9 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
                 //Snackbar.make(requireView(), "" + place.latLng, Snackbar.LENGTH_LONG).show()
                 selectedPlace = place
                 calculateRoute()
-                EventBus.getDefault().post(SelectedPlaceEvent(origin, destination))
+                /*Log.d("Address origin 2", origin.toString())
+                Log.d("Address destination 2", destination.toString())
+                EventBus.getDefault().post(SelectedPlaceEvent(origin, destination))*/
             }
         })
     }
@@ -937,45 +931,17 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
                 != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
-            Snackbar.make(mapFragment.requireView(), getString(R.string.permission_location_required), Snackbar.LENGTH_LONG).show() //TODO check if no crash with Sb
+            Snackbar.make(mapFragment.requireView(), getString(R.string.permission_location_required), Snackbar.LENGTH_LONG).show()
             return
         }
         fusedLocationProviderClient.lastLocation.addOnSuccessListener { location ->
             origin = LatLng(location.latitude, location.longitude)
             destination = LatLng(selectedPlace.latLng!!.latitude, selectedPlace.latLng!!.longitude)
+            Log.d("Address origin 1", origin.toString())
+            Log.d("Address destination 1", destination.toString())
 
             startActivity(Intent(requireContext(), RequestDriverActivity::class.java))
+            EventBus.getDefault().postSticky(SelectedPlaceEvent(origin, destination))
         }
     }
-
-    /*//----------------------------------------------------------------------------------------------
-    //-------------------------------- Intent to access camera -------------------------------------
-    //----------------------------------------------------------------------------------------------
-
-    val AUTOCOMPLETE_REQUEST_CODE = 1548
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == AUTOCOMPLETE_REQUEST_CODE) {
-            when (resultCode) {
-                Activity.RESULT_OK -> {
-                    data?.let {
-                        val place = Autocomplete.getPlaceFromIntent(data)
-                        Log.i(TAG, "Place: ${place.name}, ${place.id}")
-                    }
-                }
-                AutocompleteActivity.RESULT_ERROR -> {
-                    // TODO: Handle the error.
-                    data?.let {
-                        val status = Autocomplete.getStatusFromIntent(data)
-                        Log.i(TAG, status.statusMessage!!)
-                    }
-                }
-                Activity.RESULT_CANCELED -> {
-                    Log.i(TAG, "Search cancelled")
-                }
-            }
-            return
-        }
-        super.onActivityResult(requestCode, resultCode, data)
-    }*/
 }

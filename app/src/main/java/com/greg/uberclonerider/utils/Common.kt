@@ -95,7 +95,7 @@ object Common {
     //-------------------------------- Driver name builder -----------------------------------------
     //----------------------------------------------------------------------------------------------
 
-    fun buildDriverName(firstName: String?, lastName: String?): String? {
+    fun buildDriverName(firstName: String?, lastName: String?): String {
         return StringBuilder(firstName!!)
                 .append(" ")
                 .append(lastName)
@@ -202,9 +202,9 @@ object Common {
     //----------------------------------------------------------------------------------------------
 
     fun buildRouteOrigin(origin: LatLng): String {
-        return StringBuilder(origin.latitude.toString()) //TODO check if  there's no problem with toString() l205, 207, 216, 218
+        return StringBuilder(origin.latitude.toString())
                 .append(",")
-                .append(origin.longitude.toString())
+                .append(origin.longitude)
                 .toString()
     }
 
@@ -215,7 +215,29 @@ object Common {
     fun buildRouteDestination(destination: LatLng): String {
         return StringBuilder(destination.latitude.toString())
                 .append(",")
-                .append(destination.longitude.toString())
+                .append(destination.longitude)
                 .toString()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Format duration ---------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    fun formatDuration(duration: String): CharSequence {
+        return if (duration.contains("mins")){
+            duration.substring(0, duration.length - 1) // Remove letter "s"
+        }
+        else{
+            duration
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Format address ----------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    fun formatAddress(startAddress: String): CharSequence {
+        val firstIndexComma = startAddress.indexOf(",")
+        return startAddress.substring(0, firstIndexComma)
     }
 }
