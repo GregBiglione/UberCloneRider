@@ -72,4 +72,7 @@
     <string name="flamengo">Flamengo</string>
     <string name="pay_by_cash">Pay by cash</string>
     <string name="confirm_uber">Confirm Uber</string>
+    <string name="confirm_pickup_spot">Confirm pickup spot</string>
+    <string name="pickup_address">Av. das Nações Unidas - Botafogo, Rio de Janeiro - RJ, 20021-140</string>
+    <string name="confirm_pickup">Confirm pickup</string>
 </resources>

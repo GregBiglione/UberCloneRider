@@ -32,5 +32,7 @@
 
         <include layout="@layout/confirm_uber"/>
 
+        <include layout="@layout/confirm_pickup"/>
+
     </FrameLayout>
 </RelativeLayout>
