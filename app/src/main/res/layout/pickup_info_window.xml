@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/destination_pickup_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:text="@string/meet_driver_here"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
+        android:textColor="@color/white"
+        android:background="@drawable/pickup_rounded_corner"
+        android:layout_marginStart="20dp"/>
+
+    <View
+        android:layout_width="1dp"
+        android:layout_height="2dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@color/blue_uber_color"/>
+
+    <ImageView
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_gravity="center_horizontal"
+        android:src="@drawable/pickup_icon"/>
+
+</LinearLayout>

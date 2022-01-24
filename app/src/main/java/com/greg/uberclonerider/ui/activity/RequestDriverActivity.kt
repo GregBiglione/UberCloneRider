@@ -3,14 +3,19 @@ package com.greg.uberclonerider.ui.activity
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.res.Resources
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.view.animation.LinearInterpolator
+import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
+import com.droidman.ktoasty.KToasty
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -52,6 +57,13 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
     private var destinationMarker: Marker? = null
     private lateinit var jsonArray: JSONArray
     private lateinit var latLngBound: LatLngBounds
+    //------------------- Confirm trip -------------------------------------------------------------
+    private lateinit var confirmUberBtn: Button
+    private lateinit var confirmPickUpLayout: CardView
+    private lateinit var confirmUberLayout: CardView
+    private lateinit var pickUpAddressTv: TextView
+    private lateinit var startAddress: String
+    private lateinit var icon: Bitmap
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,10 +87,17 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
         drawPath(selectedPlaceEvent!!)
-        clickOnMyLocation()
-        enableZoom()
+        /*clickOnMyLocation()
+        enableZoom()*/
         mapStyle()
     }
+
+    /**-----------------------------------------------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+     *----------------------- Estimate routes --------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
 
     //----------------------------------------------------------------------------------------------
     //-------------------------------- Selected place ----------------------------------------------
@@ -111,6 +130,8 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun initializeRetrofit(){
         iRetrofitService = RetrofitService.getInstance()
+        //-------------------------------- Click on confirm Uber -----------------------------------
+        clickOnConfirmUber()
     }
 
     //----------------------------------------------------------------------------------------------
@@ -265,7 +286,7 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
         val time = legsObject.getJSONObject("duration")
         val duration = time.getString("text")
 
-        val startAddress = legsObject.getString("start_address")
+        startAddress = legsObject.getString("start_address")
         val endAddress = legsObject.getString("end_address")
 
         addOriginMarker(duration, startAddress)
@@ -304,10 +325,7 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
         timeTv.text = Common.formatDuration(duration)
         originTv.text = Common.formatAddress(startAddress)
 
-        val generator = IconGenerator(this)
-        generator.setContentView(view)
-        generator.setBackground(ColorDrawable(Color.TRANSPARENT))
-        val icon = generator.makeIcon()
+        generateIcon(view)
 
         originMarker = mMap.addMarker(MarkerOptions().icon(BitmapDescriptorFactory.fromBitmap(icon))
                 .position(selectedPlaceEvent!!.origin))
@@ -324,12 +342,78 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
         val destinationTv = view.findViewById<View>(R.id.destination_tv) as TextView
         destinationTv.text = Common.formatAddress(endAddress)
 
-        val generator = IconGenerator(this)
-        generator.setContentView(view)
-        generator.setBackground(ColorDrawable(Color.TRANSPARENT))
-        val icon = generator.makeIcon()
+        generateIcon(view)
 
         destinationMarker = mMap.addMarker(MarkerOptions().icon(BitmapDescriptorFactory.fromBitmap(icon))
                 .position(selectedPlaceEvent!!.destination))
+    }
+
+    /**-----------------------------------------------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+     *----------------------- Confirm trip -----------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Click on confirm Uber ---------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun clickOnConfirmUber(){
+        confirmUberBtn = findViewById(R.id.confirm_uber_btn)
+        confirmUberBtn.setOnClickListener {
+            showConfirmPickUpLayout()
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Show confirm pickup layout ----------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun showConfirmPickUpLayout() {
+        confirmPickUpLayout = findViewById(R.id.confirm_pickup)
+        confirmUberLayout = findViewById(R.id.confirm_uber)
+
+        confirmPickUpLayout.visibility = View.VISIBLE
+        confirmUberLayout.visibility = View.GONE
+        setPickUpData()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Set pick up data --------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun setPickUpData() {
+        pickUpAddressTv = findViewById(R.id.pickup_address_tv)
+        if (startAddress != null){
+            pickUpAddressTv.text = startAddress
+        }
+        else{
+            pickUpAddressTv.text = getString(R.string.none)
+        }
+        mMap.clear()
+        addPickUpMarker()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Add pickup marker -------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun addPickUpMarker() {
+        val view = layoutInflater.inflate(R.layout.pickup_info_window, null)
+
+        generateIcon(view)
+
+        originMarker = mMap.addMarker(MarkerOptions().icon(BitmapDescriptorFactory.fromBitmap(icon)).position(selectedPlaceEvent!!.origin))
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Generate icon -----------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun generateIcon(view: View){
+        val generator = IconGenerator(this)
+        generator.setContentView(view)
+        generator.setBackground(ColorDrawable(Color.TRANSPARENT))
+        icon = generator.makeIcon()
     }
 }

@@ -75,4 +75,6 @@
     <string name="confirm_pickup_spot">Confirm pickup spot</string>
     <string name="pickup_address">Av. das Nações Unidas - Botafogo, Rio de Janeiro - RJ, 20021-140</string>
     <string name="confirm_pickup">Confirm pickup</string>
+    <string name="none">None</string>
+    <string name="meet_driver_here">Meet driver here</string>
 </resources>
