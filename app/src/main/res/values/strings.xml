@@ -70,4 +70,6 @@
     <string name="navigation_next">Navigation next</string>
     <string name="map_tie">Vador Tie fighter</string>
     <string name="flamengo">Flamengo</string>
+    <string name="pay_by_cash">Pay by cash</string>
+    <string name="confirm_uber">Confirm Uber</string>
 </resources>

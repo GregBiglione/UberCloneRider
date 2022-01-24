@@ -13,4 +13,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="phone_color">#3BB927</color>
     <color name="google_text_color">#7F7F7F</color>
+    <color name="money_color">#FF737373</color>
 </resources>
