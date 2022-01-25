@@ -113,7 +113,6 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
     private var lat: Double = 0.0
     private var lng: Double = 0.0
     private lateinit var locationResultPosition: Location
-    private var driverFound: MutableSet<DriverGeolocation> = HashSet()
     private lateinit var riderLocation: Location
     private var markerList: MutableMap<String, Marker> = HashMap()
     private lateinit var driverGeo: DriverGeolocation
@@ -332,7 +331,7 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
 
     private fun enableZoom(){
         map.uiSettings.isZoomControlsEnabled = true
-        map.setPadding(16, 16, 0, 166)
+        map.setPadding(16, 16, 0, 496)
     }
 
     /**-----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -545,7 +544,10 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
     private fun addGeoQueryEventListener(){
         geoQuery.addGeoQueryEventListener(object: GeoQueryEventListener{
             override fun onKeyEntered(key: String?, location: GeoLocation?) {
-                driverFound.add(DriverGeolocation(key!!, location!!))
+                //driverFound.add(DriverGeolocation(key!!, location!!))
+                if (!Common.driverFound.containsKey(key)){
+                    Common.driverFound[key!!] = DriverGeolocation(key, location)
+                }
             }
 
             override fun onKeyExited(key: String?) {}
@@ -566,7 +568,6 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
             override fun onGeoQueryError(error: DatabaseError?) {
                 Snackbar.make(requireView(), error!!.message, Snackbar.LENGTH_SHORT).show()
             }
-
         })
     }
 
@@ -608,14 +609,13 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
     //----------------------------------------------------------------------------------------------
 
     private fun addDriverMarker() {
-        if (driverFound.size > 0){
-            Observable.fromIterable(driverFound)
+        if (Common.driverFound.isNotEmpty()){
+            Observable.fromIterable(Common.driverFound.keys)
                     .subscribeOn(Schedulers.newThread())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
-                            { driverGeolocation: DriverGeolocation? ->
-                                Log.d("Driver info in obs 1", driverGeolocation!!.driverInformation.toString())
-                                findDriverByKey(driverGeolocation)
+                            { key: String? ->
+                                findDriverByKey(Common.driverFound[key!!])
                             },
                             {
                                 t: Throwable? ->
@@ -640,6 +640,7 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
                     override fun onDataChange(snapshot: DataSnapshot) {
                         if (snapshot.hasChildren()){
                             driverGeolocation.driverInformation = (snapshot.getValue(DriverInformation::class.java))
+                            Common.driverFound[driverGeolocation.key!!]!!.driverInformation = (snapshot.getValue(DriverInformation::class.java))
                             iFirebaseDriverInformationListener.onDriverInformationLoadSuccess(driverGeolocation)
                         }
                         else{

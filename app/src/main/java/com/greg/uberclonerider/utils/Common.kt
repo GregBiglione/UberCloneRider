@@ -14,7 +14,9 @@ import android.widget.TextView
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.maps.model.LatLng
 import com.greg.uberclonerider.R
+import com.greg.uberclonerider.model.DriverGeolocation
 import com.greg.uberclonerider.model.Rider
+import com.greg.uberclonerider.ui.home.HomeFragment
 import com.greg.uberclonerider.utils.Constant.Companion.NOTIFICATION_CHANNEL_ID
 import java.lang.Math.abs
 import java.lang.Math.atan
@@ -24,6 +26,7 @@ import kotlin.collections.ArrayList
 
 object Common {
     var currentRider: Rider? = null
+    var driverFound: MutableMap<String, DriverGeolocation> = HashMap()
 
     //----------------------------------------------------------------------------------------------
     //-------------------------------- Welcome message builder -------------------------------------
@@ -254,5 +257,15 @@ object Common {
         valueAnimator.repeatMode = ValueAnimator.RESTART
         valueAnimator.start()
         return valueAnimator
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Found driver builder ----------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    fun foundDriver(foundDriver: DriverGeolocation): String {
+        return StringBuilder("Found driver:")
+                .append(foundDriver.driverInformation!!.phoneNumber)
+                .toString()
     }
 }

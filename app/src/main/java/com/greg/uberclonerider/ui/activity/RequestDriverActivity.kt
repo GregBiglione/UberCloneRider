@@ -6,14 +6,12 @@ import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.view.animation.LinearInterpolator
-import android.widget.Button
-import android.widget.FrameLayout
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
@@ -29,6 +27,7 @@ import com.google.maps.android.ui.IconGenerator
 import com.greg.uberclonerider.R
 import com.greg.uberclonerider.event.SelectedPlaceEvent
 import com.greg.uberclonerider.remote.RetrofitService
+import com.greg.uberclonerider.ui.home.HomeFragment
 import com.greg.uberclonerider.utils.Common
 import com.greg.uberclonerider.utils.Constant.Companion.DESIRED_NUMBER_OF_SPIN
 import com.greg.uberclonerider.utils.Constant.Companion.DESIRED_SECONDS_FOR_ONE_FULL_ROTATION
@@ -79,6 +78,8 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
     private var lastPulseAnimator: ValueAnimator? = null
     //------------------- Camera rotation ----------------------------------------------------------
     private var animator: ValueAnimator? = null
+    //------------------- Find nearby driver -------------------------------------------------------
+    private lateinit var mainLayout: RelativeLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -550,6 +551,7 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
                     .build()))
         }
         animator!!.start()
+        findNearbyDriver(target)
     }
 
     override fun onDestroy() {
@@ -557,5 +559,47 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
             animator!!.end()
         }
         super.onDestroy()
+    }
+
+    /**-----------------------------------------------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+     *----------------------- Find nearby driver -----------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Find nearby driver ------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun findNearbyDriver(target: LatLng) {
+        mainLayout = findViewById(R.id.main_layout)
+        if(Common.driverFound.isNotEmpty()){
+            //-------------------------------- Get the first driver by default ---------------------
+            var min = 0f
+            var foundDriver = Common.driverFound[Common.driverFound.keys.iterator().next()]
+            val currentRiderLocation = Location("")
+            currentRiderLocation.latitude = target.latitude
+            currentRiderLocation.longitude = target.longitude
+
+            for(key in Common.driverFound.keys){
+                val driverLocation = Location("")
+                driverLocation.latitude = Common.driverFound[key]!!.geoLocation!!.latitude
+                driverLocation.longitude = Common.driverFound[key]!!.geoLocation!!.longitude
+
+                //-------------------------------- Init min val & found first driver in list -------
+                if (min == 0f){
+                    min = driverLocation.distanceTo(currentRiderLocation)
+                    foundDriver = Common.driverFound[key]
+                }
+                else if ( driverLocation.distanceTo(currentRiderLocation) < min){
+                    min = driverLocation.distanceTo(currentRiderLocation)
+                    foundDriver = Common.driverFound[key]
+                }
+            }
+            Snackbar.make(mainLayout, Common.foundDriver(foundDriver!!), Snackbar.LENGTH_LONG).show()
+        }
+        else{
+            Snackbar.make(mainLayout, getString(R.string.drivers_not_found), Snackbar.LENGTH_LONG).show()
+        }
     }
 }
