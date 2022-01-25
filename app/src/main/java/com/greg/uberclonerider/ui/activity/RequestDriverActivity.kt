@@ -11,10 +11,12 @@ import android.util.Log
 import android.view.View
 import android.view.animation.LinearInterpolator
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import com.droidman.ktoasty.KToasty
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -28,7 +30,10 @@ import com.greg.uberclonerider.R
 import com.greg.uberclonerider.event.SelectedPlaceEvent
 import com.greg.uberclonerider.remote.RetrofitService
 import com.greg.uberclonerider.utils.Common
-import com.greg.uberclonerider.utils.Constant
+import com.greg.uberclonerider.utils.Constant.Companion.DESIRED_NUMBER_OF_SPIN
+import com.greg.uberclonerider.utils.Constant.Companion.DESIRED_SECONDS_FOR_ONE_FULL_ROTATION
+import com.greg.uberclonerider.utils.Constant.Companion.DURATION
+import com.greg.uberclonerider.utils.Constant.Companion.TILT_ZOOM
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -57,13 +62,23 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
     private var destinationMarker: Marker? = null
     private lateinit var jsonArray: JSONArray
     private lateinit var latLngBound: LatLngBounds
-    //------------------- Confirm trip -------------------------------------------------------------
+    //------------------- Confirm Uber -------------------------------------------------------------
     private lateinit var confirmUberBtn: Button
     private lateinit var confirmPickUpLayout: CardView
     private lateinit var confirmUberLayout: CardView
     private lateinit var pickUpAddressTv: TextView
     private lateinit var startAddress: String
     private lateinit var icon: Bitmap
+    //------------------- Confirm pick up spot -----------------------------------------------------
+    private lateinit var confirmPickUpBtn: Button
+    private lateinit var cameraPosition: CameraPosition
+    private lateinit var fillMap: View
+    private lateinit var findYourRiderLayout: CardView
+    //------------------- Pulsating effect ---------------------------------------------------------
+    private var lastUserCircle: Circle? = null
+    private var lastPulseAnimator: ValueAnimator? = null
+    //------------------- Camera rotation ----------------------------------------------------------
+    private var animator: ValueAnimator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -132,34 +147,36 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
         iRetrofitService = RetrofitService.getInstance()
         //-------------------------------- Click on confirm Uber -----------------------------------
         clickOnConfirmUber()
+        //-------------------------------- Click on confirm pick up spot ---------------------------
+        clickOnConfirmPickUp()
     }
 
     //----------------------------------------------------------------------------------------------
     //-------------------------------- Center map on my location -----------------------------------
     //----------------------------------------------------------------------------------------------
 
-    private fun clickOnMyLocation(){
+    /*private fun clickOnMyLocation(){
         locationButton = findViewById(R.id.gps_request_driver)
         locationButton.setOnClickListener {
             moveCameraToSelectedPlace()
         }
-    }
+    }*/
 
-    //----------------------------------------------------------------------------------------------
+    /*//----------------------------------------------------------------------------------------------
     //-------------------------------- Move camera to selected place origin ------------------------
     //----------------------------------------------------------------------------------------------
 
     private fun moveCameraToSelectedPlace() {
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(selectedPlaceEvent!!.origin, Constant.DEFAULT_ZOOM))
-    }
+    }*/
 
     //----------------------------------------------------------------------------------------------
     //-------------------------------- Enable zoom -------------------------------------------------
     //----------------------------------------------------------------------------------------------
 
-    private fun enableZoom(){
+    /*private fun enableZoom(){
         mMap.uiSettings.isZoomControlsEnabled = true
-    }
+    }*/
 
     //----------------------------------------------------------------------------------------------
     //-------------------------------- Custom style ------------------------------------------------
@@ -350,7 +367,7 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
 
     /**-----------------------------------------------------------------------------------------------------------------------------------------------------
      *------------------------------------------------------------------------------------------------------------------------------------------------------
-     *----------------------- Confirm trip -----------------------------------------------------------------------------------------------------------------
+     *----------------------- Confirm Uber -----------------------------------------------------------------------------------------------------------------
      *------------------------------------------------------------------------------------------------------------------------------------------------------
     ------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
@@ -370,8 +387,8 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
     //----------------------------------------------------------------------------------------------
 
     private fun showConfirmPickUpLayout() {
-        confirmPickUpLayout = findViewById(R.id.confirm_pickup)
-        confirmUberLayout = findViewById(R.id.confirm_uber)
+        confirmPickUpLayout = findViewById(R.id.confirm_pickup_cv)
+        confirmUberLayout = findViewById(R.id.confirm_uber_cv)
 
         confirmPickUpLayout.visibility = View.VISIBLE
         confirmUberLayout.visibility = View.GONE
@@ -415,5 +432,130 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
         generator.setContentView(view)
         generator.setBackground(ColorDrawable(Color.TRANSPARENT))
         icon = generator.makeIcon()
+    }
+
+    /**-----------------------------------------------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+     *----------------------- Confirm pick up spot ---------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Click on confirm pick up spot -------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun clickOnConfirmPickUp(){
+        confirmPickUpBtn = findViewById(R.id.confirm_pickup_btn)
+        confirmPickUpBtn.setOnClickListener {
+            if (mMap == null){
+                return@setOnClickListener
+            }
+            if (selectedPlaceEvent == null){
+                return@setOnClickListener
+            }
+            mMap.clear()
+            tiltCamera()
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Rotate camera at 360° ---------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun tiltCamera(){
+        cameraPosition = CameraPosition.Builder().target(selectedPlaceEvent!!.origin)
+                .tilt(45f)
+                .zoom(TILT_ZOOM)
+                .build()
+        moveTiltCamera()
+        addMarkerWithPulseAnimator()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Move tilt camera --------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun moveTiltCamera() {
+        mMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Animate tilt camera -----------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun addMarkerWithPulseAnimator(){
+        confirmPickUpLayout = findViewById(R.id.confirm_pickup_cv)
+        fillMap = findViewById(R.id.fill_map)
+        findYourRiderLayout = findViewById(R.id.finding_your_ride_cv)
+
+        confirmPickUpLayout.visibility = View.GONE
+        fillMap.visibility = View.VISIBLE
+        findYourRiderLayout.visibility = View.VISIBLE
+
+        originMarker = mMap.addMarker(MarkerOptions().icon(BitmapDescriptorFactory.defaultMarker())
+                .position(selectedPlaceEvent!!.origin))
+        addPulsatingEffect(selectedPlaceEvent!!.origin)
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Pulsating effect --------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun addPulsatingEffect(origin: LatLng) {
+        if (lastPulseAnimator != null){
+            lastPulseAnimator!!.cancel()
+        }
+        if (lastUserCircle != null){
+            lastUserCircle!!.center = origin
+        }
+        lastPulseAnimator = Common.valueAnimate(DURATION, object: ValueAnimator.AnimatorUpdateListener{
+            override fun onAnimationUpdate(valueAnimator: ValueAnimator) {
+                if (lastUserCircle != null){
+                    lastUserCircle!!.radius = valueAnimator.animatedValue.toString().toDouble()
+                }
+                else{
+                    lastUserCircle = mMap.addCircle(CircleOptions()
+                            .center(origin)
+                            .radius(valueAnimator.animatedValue.toString().toDouble())
+                            .strokeColor(Color.WHITE)
+                            .fillColor(ContextCompat.getColor(this@RequestDriverActivity, R.color.map_darker))
+                    )
+                }
+            }
+        })
+        //-------------------------------- Start rotating camera -----------------------------------
+        startMapCameraSpinningAnimation(mMap.cameraPosition.target)
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Camera rotation ---------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun startMapCameraSpinningAnimation(target: LatLng) {
+        if (animator != null){
+            animator!!.cancel()
+        }
+        animator = ValueAnimator.ofFloat(0f, (DESIRED_NUMBER_OF_SPIN * 360).toFloat())
+        animator!!.duration = (DESIRED_NUMBER_OF_SPIN * DESIRED_SECONDS_FOR_ONE_FULL_ROTATION * 1000).toLong()
+        animator!!.interpolator = LinearInterpolator()
+        animator!!.startDelay = 100
+        animator!!.addUpdateListener { valueAnimator ->
+            val newBearingValue = valueAnimator.animatedValue as Float
+
+            mMap.moveCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
+                    .target(target)
+                    .zoom(TILT_ZOOM)
+                    .tilt(45f)
+                    .bearing(newBearingValue)
+                    .build()))
+        }
+        animator!!.start()
+    }
+
+    override fun onDestroy() {
+        if (animator != null){
+            animator!!.end()
+        }
+        super.onDestroy()
     }
 }

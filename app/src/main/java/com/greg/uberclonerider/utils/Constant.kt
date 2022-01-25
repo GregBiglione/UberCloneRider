@@ -27,6 +27,10 @@ class Constant {
         const val GEO_CODER_TAG = "GeoCodingLocation"
         //-------------------------------- Url -----------------------------------------------------
         const val BASE_URL = "https://maps.googleapis.com/"
-
+        //-------------------------------- Spin camera ---------------------------------------------
+        const val TILT_ZOOM = 16.0f
+        const val DURATION = 1000
+        const val DESIRED_NUMBER_OF_SPIN = 5
+        const val DESIRED_SECONDS_FOR_ONE_FULL_ROTATION = 40
     }
 }

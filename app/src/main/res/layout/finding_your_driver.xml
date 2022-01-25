@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:id="@+id/confirm_uber_cv">
+    android:layout_height="wrap_content"
+    android:visibility="gone"
+    android:id="@+id/finding_your_ride_cv">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -23,42 +24,21 @@
             android:paddingBottom="8dp">
 
             <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:layout_marginEnd="32dp"
-                android:src="@drawable/ic_baseline_money_24"
+                android:src="@drawable/ic_baseline_map_24"
                 android:tint="@color/money_color"/>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
-                android:text="@string/pay_by_cash"
+                android:text="@string/finding_your_ride"
                 android:textColor="@color/money_color"
                 android:textSize="16sp"/>
 
         </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:clickable="true"
-            android:foreground="?attr/selectableItemBackground"
-            android:paddingStart="16dp"
-            android:paddingTop="8dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="8dp">
-
-            <Button
-                android:id="@+id/confirm_uber_btn"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@color/colorAccent"
-                android:text="@string/confirm_uber"
-                android:textColor="@color/white"/>
-        </LinearLayout>
-
     </LinearLayout>
 
 </androidx.cardview.widget.CardView>

@@ -6,23 +6,25 @@
     android:layout_height="match_parent"
     tools:context=".ui.activity.RequestDriverActivity">
 
-    <fragment
-        android:id="@+id/map_request_driver"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:layout_above="@+id/confirm_layout">
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/gps_request_driver"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:backgroundTint="@color/white"
-            android:layout_gravity="bottom|end"
-            android:layout_marginEnd="60dp"
-            android:layout_marginBottom="16dp"
-            android:src="@drawable/ic_baseline_my_location_24"
-            android:contentDescription="@string/gps" />
-    </fragment>
+        <fragment
+            android:id="@+id/map_request_driver"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <View
+            android:id="@+id/fill_map"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:background="@color/map_darker"/>
+    </FrameLayout>
+
 
     <FrameLayout
         android:id="@+id/confirm_layout"
@@ -33,6 +35,8 @@
         <include layout="@layout/confirm_uber"/>
 
         <include layout="@layout/confirm_pickup"/>
+
+        <include layout="@layout/finding_your_driver"/>
 
     </FrameLayout>
 </RelativeLayout>
