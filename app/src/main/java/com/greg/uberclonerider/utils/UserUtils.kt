@@ -2,12 +2,15 @@ package com.greg.uberclonerider.utils
 
 import android.content.Context
 import android.view.View
+import android.widget.RelativeLayout
 import android.widget.Toast
 import com.droidman.ktoasty.KToasty
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.greg.uberclonerider.R
+import com.greg.uberclonerider.model.DriverGeolocation
 import com.greg.uberclonerider.model.Token
 import com.greg.uberclonerider.utils.Constant.Companion.RIDER_INFORMATION
 import com.greg.uberclonerider.utils.Constant.Companion.TOKEN
@@ -15,6 +18,10 @@ import com.greg.uberclonerider.utils.Constant.Companion.TOKEN
 object UserUtils {
 
     private var currentUserUid = FirebaseAuth.getInstance().currentUser!!.uid
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Update driver -----------------------------------------------
+    //----------------------------------------------------------------------------------------------
 
     fun updateDriver(view: View?, updateAvatar: Map<String, Any>){
         FirebaseDatabase.getInstance()
@@ -29,6 +36,10 @@ object UserUtils {
             }
     }
 
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Update token ------------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
     fun updateToken(context: Context, token: String) {
         val currentToken = Token()
         currentToken.token = token
@@ -40,5 +51,13 @@ object UserUtils {
             .addOnFailureListener { e ->
                 KToasty.error(context, e.message!!, Toast.LENGTH_LONG).show()
             }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Send request to driver --------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    fun sendRequestToDriver(context: Context, mainLayout: RelativeLayout?, foundDriver: DriverGeolocation?, target: LatLng) {
+
     }
 }

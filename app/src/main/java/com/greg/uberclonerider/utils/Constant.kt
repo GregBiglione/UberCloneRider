@@ -1,6 +1,7 @@
 package com.greg.uberclonerider.utils
 
 import android.Manifest
+import com.greg.uberclonerider.R
 
 class Constant {
     companion object{
@@ -32,5 +33,7 @@ class Constant {
         const val DURATION = 1000
         const val DESIRED_NUMBER_OF_SPIN = 5
         const val DESIRED_SECONDS_FOR_ONE_FULL_ROTATION = 40
+        //-------------------------------- Firebase key --------------------------------------------
+        const val FIREBASE_KEY = R.string.FirebaseKey
     }
 }

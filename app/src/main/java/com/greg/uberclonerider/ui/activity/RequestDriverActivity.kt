@@ -33,6 +33,7 @@ import com.greg.uberclonerider.utils.Constant.Companion.DESIRED_NUMBER_OF_SPIN
 import com.greg.uberclonerider.utils.Constant.Companion.DESIRED_SECONDS_FOR_ONE_FULL_ROTATION
 import com.greg.uberclonerider.utils.Constant.Companion.DURATION
 import com.greg.uberclonerider.utils.Constant.Companion.TILT_ZOOM
+import com.greg.uberclonerider.utils.UserUtils
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -596,7 +597,8 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
                     foundDriver = Common.driverFound[key]
                 }
             }
-            Snackbar.make(mainLayout, Common.foundDriver(foundDriver!!), Snackbar.LENGTH_LONG).show()
+            //Snackbar.make(mainLayout, Common.foundDriver(foundDriver!!), Snackbar.LENGTH_LONG).show()
+            UserUtils.sendRequestToDriver(this@RequestDriverActivity, mainLayout, foundDriver, target)
         }
         else{
             Snackbar.make(mainLayout, getString(R.string.drivers_not_found), Snackbar.LENGTH_LONG).show()

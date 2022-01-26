@@ -21,12 +21,16 @@ android {
         debug{
             buildConfigField 'String', "ApiKey", MAPS_API_KEY
             resValue 'string', "ApiKey", MAPS_API_KEY
+            buildConfigField 'String', "FirebaseKey", UBERCLONE_KEY
+            resValue 'string', "FirebaseKey", UBERCLONE_KEY
         }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             buildConfigField 'String', "ApiKey", MAPS_API_KEY
             resValue 'string', "ApiKey", MAPS_API_KEY
+            buildConfigField 'String', "FirebaseKey", UBERCLONE_KEY
+            resValue 'string', "FirebaseKey", UBERCLONE_KEY
         }
     }
     compileOptions {
