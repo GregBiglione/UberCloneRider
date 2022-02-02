@@ -494,7 +494,7 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
         fillMap.visibility = View.VISIBLE
         findYourRiderLayout.visibility = View.VISIBLE
 
-        originMarker = mMap.addMarker(MarkerOptions().icon(BitmapDescriptorFactory.defaultMarker())
+        originMarker = mMap.addMarker(MarkerOptions().icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
                 .position(selectedPlaceEvent!!.origin))
         addPulsatingEffect(selectedPlaceEvent!!.origin)
     }
@@ -592,7 +592,7 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
                     min = driverLocation.distanceTo(currentRiderLocation)
                     foundDriver = Common.driverFound[key]
                 }
-                else if ( driverLocation.distanceTo(currentRiderLocation) < min){
+                else if (driverLocation.distanceTo(currentRiderLocation) < min){
                     min = driverLocation.distanceTo(currentRiderLocation)
                     foundDriver = Common.driverFound[key]
                 }

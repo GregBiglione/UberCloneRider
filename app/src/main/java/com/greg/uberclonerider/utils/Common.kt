@@ -268,4 +268,15 @@ object Common {
                 .append(foundDriver.driverInformation!!.phoneNumber)
                 .toString()
     }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Pick up location builder for notification -------------------
+    //----------------------------------------------------------------------------------------------
+
+    fun buildPickUpLocation(target: LatLng): String {
+        return StringBuilder(target.latitude.toString())
+            .append(",")
+            .append(target.longitude)
+            .toString()
+    }
 }

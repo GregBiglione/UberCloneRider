@@ -14,6 +14,9 @@ class Constant {
         //-------------------------------- Driver --------------------------------------------------
         const val DRIVER_LOCATION = "DriverLocation"
         const val DRIVER_INFORMATION = "DriverInformation"
+        const val REQUEST_DRIVER_TITLE = "RequestDriver"
+        const val REQUEST_DRIVER_BODY = "This message represent for request driver action"
+        const val PICKUP_LOCATION = "PickupLocation"
         //-------------------------------- Camera & gallery ----------------------------------------
         const val ACCESS_CAMERA = Manifest.permission.CAMERA
         const val READ_STORAGE = Manifest.permission.READ_EXTERNAL_STORAGE
@@ -28,6 +31,7 @@ class Constant {
         const val GEO_CODER_TAG = "GeoCodingLocation"
         //-------------------------------- Url -----------------------------------------------------
         const val BASE_URL = "https://maps.googleapis.com/"
+        const val BASE_URL_FCM = "https://fcm.googleapis.com/"
         //-------------------------------- Spin camera ---------------------------------------------
         const val TILT_ZOOM = 16.0f
         const val DURATION = 1000
