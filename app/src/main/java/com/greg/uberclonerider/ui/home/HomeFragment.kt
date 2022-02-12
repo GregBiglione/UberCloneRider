@@ -2,7 +2,6 @@ package com.greg.uberclonerider.ui.home
 
 import android.Manifest
 import android.animation.ValueAnimator
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Resources
@@ -87,8 +86,8 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
     private lateinit var slidingUpPanelLayout: SlidingUpPanelLayout
     private lateinit var autocompleteFragment: AutocompleteSupportFragment
     //------------------- Location -----------------------------------------------------------------
-    private lateinit var locationRequest: LocationRequest
-    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+    private var locationRequest: LocationRequest? = null
+    private var fusedLocationProviderClient: FusedLocationProviderClient? = null
     private lateinit var newPosition: LatLng
     private lateinit var userLocation: LatLng
     //------------------- Online system ------------------------------------------------------------
@@ -137,8 +136,9 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
         homeViewModel =
             ViewModelProvider(this)[HomeViewModel::class.java]
         binding = FragmentHomeBinding.inflate(layoutInflater)
-        getLocationRequest()
+        //getLocationRequest()
         initializeViews(binding.root)
+        getLocationRequest()
         return binding.root
     }
 
@@ -201,21 +201,43 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
         initializePlaces()
         initializeRetrofit()
         iFirebaseDriverInformationListener()
-        locationRequest = LocationRequest.create()
-        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        locationRequest.fastestInterval = 3000
-        locationRequest.interval = 5000
-        locationRequest.smallestDisplacement = 10f
-
-        locationCallback
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            //Snackbar.make(requireContext(), getString(R.string.permission_required), Snackbar.LENGTH_LONG).show()
+            return
+        }
+        buildLocationRequest()
+        buildLocationCallback()
         createLocationService()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //------------------- Location request ---------------------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun buildLocationRequest(){
+        if (locationRequest == null) {
+            locationRequest = LocationRequest.create()
+            locationRequest!!.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+            locationRequest!!.fastestInterval = 3000
+            locationRequest!!.interval = 5000
+            locationRequest!!.smallestDisplacement = 10f
+        }
     }
 
     //----------------------------------------------------------------------------------------------
     //------------------- Location callback --------------------------------------------------------
     //----------------------------------------------------------------------------------------------
 
-    private var locationCallback = object: LocationCallback(){
+    private fun buildLocationCallback(){
+        if (locationCallback == null){
+            locationCallback
+        }
+    }
+
+    private var locationCallback: LocationCallback? = object: LocationCallback(){
         override fun onLocationResult(locationResult: LocationResult) {
             super.onLocationResult(locationResult)
 
@@ -249,23 +271,37 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
 
     //-------------------------------- Location service --------------------------------------------
 
-    @SuppressLint("MissingPermission")
     private fun createLocationService() {
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
-        fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper()!!)
-        loadAvailableDrivers()
+        if (fusedLocationProviderClient == null) {
+            fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
+            if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED
+                    && ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                //Snackbar.make(requireView(), getString(R.string.permission_required), Snackbar.LENGTH_LONG).show()
+                return
+            }
+            fusedLocationProviderClient!!.requestLocationUpdates(locationRequest!!, locationCallback!!, Looper.myLooper()!!)
+            loadAvailableDrivers()
+        }
     }
 
     override fun onDestroy() {
-        fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+        fusedLocationProviderClient!!.removeLocationUpdates(locationCallback!!)
         removeLocation()
         removeOnlineListener()
         super.onDestroy()
     }
 
-    @SuppressLint("MissingPermission")
     private fun lastKnownLocation(){
-        fusedLocationProviderClient.lastLocation
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            //Snackbar.make(requireView(), getString(R.string.permission_required), Snackbar.LENGTH_LONG).show()
+            return
+        }
+        fusedLocationProviderClient!!.lastLocation
             .addOnSuccessListener { location ->
                 if (location != null) {
                     userLocation = LatLng(location.latitude, location.longitude)
@@ -299,6 +335,9 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
             .withPermission(ACCESS_FINE_LOCATION)
             .withListener(object: PermissionListener {
                 override fun onPermissionGranted(permissionGrantedResponse: PermissionGrantedResponse?) {
+                    buildLocationRequest()
+                    buildLocationCallback()
+                    createLocationService()
                     clickOnMyLocation()
                 }
 
@@ -443,7 +482,7 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
                 != PackageManager.PERMISSION_GRANTED) {
             return
         }
-        fusedLocationProviderClient.lastLocation
+        fusedLocationProviderClient!!.lastLocation
                 .addOnSuccessListener { location ->
                     //-------------------------------- Get city ------------------------------------
                     if (location != null) {
@@ -935,7 +974,7 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
             Snackbar.make(mapFragment.requireView(), getString(R.string.permission_location_required), Snackbar.LENGTH_LONG).show()
             return
         }
-        fusedLocationProviderClient.lastLocation.addOnSuccessListener { location ->
+        fusedLocationProviderClient!!.lastLocation.addOnSuccessListener { location ->
             origin = LatLng(location.latitude, location.longitude)
             destination = LatLng(selectedPlace.latLng!!.latitude, selectedPlace.latLng!!.longitude)
             Log.d("Address origin 1", origin.toString())

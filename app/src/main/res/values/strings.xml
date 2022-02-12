@@ -80,4 +80,5 @@
     <string name="finding_your_ride">Finding your ride</string>
     <string name="token_not_found">Token not found</string>
     <string name="send_request_driver_failed">Request driver failed</string>
+    <string name="permission_required">Permission required</string>
 </resources>
