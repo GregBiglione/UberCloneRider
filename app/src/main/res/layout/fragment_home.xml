@@ -22,7 +22,9 @@
             android:layout_marginBottom="290dp"
             app:borderWidth="0dp"
             android:src="@drawable/ic_baseline_my_location_24"
-            android:contentDescription="@string/gps" />
+            android:contentDescription="@string/gps"
+            android:tint="@color/colorAccent"
+            android:tintMode="@color/colorAccent"/>
     </fragment>
 
     <com.sothree.slidinguppanel.SlidingUpPanelLayout

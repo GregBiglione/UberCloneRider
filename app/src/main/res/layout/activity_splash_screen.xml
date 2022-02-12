@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@drawable/uber_clone_rider_splash"
     android:padding="16dp">
 
@@ -21,22 +22,22 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="10dp"
             android:padding="16dp"
-            android:background="@color/phone_color"
+            android:backgroundTint="@color/phone_color"
             android:text="@string/log_in_with_phone_number"
             android:textAllCaps="false"
             android:textColor="@color/white"
-            android:drawableStart="@drawable/phone_black"/>
+            app:icon="@drawable/phone_black"/>
 
         <Button
             android:id="@+id/google_btn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="16dp"
-            android:background="@color/white"
+            android:backgroundTint="@color/white"
             android:text="@string/log_in_with_google"
             android:textAllCaps="false"
             android:textColor="@color/google_text_color"
-            android:drawableStart="@drawable/fui_ic_googleg_color_24dp"/>
+            app:icon="@drawable/fui_ic_googleg_color_24dp"/>
 
     </LinearLayout>
 </RelativeLayout>

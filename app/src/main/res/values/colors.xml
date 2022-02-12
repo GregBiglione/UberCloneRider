@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorPrimary">#FFFFFFFF</color>
-    <color name="colorPrimaryDark">#FFCCCCCC</color>
+    <color name="colorPrimaryDark">#00000000</color>
     <color name="colorPrimaryDarkStatusBar">#1ACCCCCC</color>
     <color name="colorAccent">#FF000000</color>
     <!--<color name="purple_200">#FFBB86FC</color>

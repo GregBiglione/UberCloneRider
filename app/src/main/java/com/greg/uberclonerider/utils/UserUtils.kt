@@ -25,6 +25,7 @@ import com.greg.uberclonerider.utils.Constant.Companion.PICKUP_LOCATION
 import com.greg.uberclonerider.utils.Constant.Companion.REQUEST_DRIVER_BODY
 import com.greg.uberclonerider.utils.Constant.Companion.REQUEST_DRIVER_TITLE
 import com.greg.uberclonerider.utils.Constant.Companion.RIDER_INFORMATION
+import com.greg.uberclonerider.utils.Constant.Companion.RIDER_KEY
 import com.greg.uberclonerider.utils.Constant.Companion.TOKEN
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
@@ -88,6 +89,7 @@ object UserUtils {
                             notificationData[NOTIFICATION_TITLE] = REQUEST_DRIVER_TITLE
                             notificationData[NOTIFICATION_BODY] = REQUEST_DRIVER_BODY
                             notificationData[PICKUP_LOCATION] = Common.buildPickUpLocation(target)
+                            notificationData[RIDER_KEY] = FirebaseAuth.getInstance().currentUser!!.uid
 
                             val fcmSendData = FCMSendData(token.toString(), notificationData)
 
