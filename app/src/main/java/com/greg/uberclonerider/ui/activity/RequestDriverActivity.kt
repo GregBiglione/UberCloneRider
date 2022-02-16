@@ -25,7 +25,9 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.maps.android.ui.IconGenerator
 import com.greg.uberclonerider.R
+import com.greg.uberclonerider.event.DeclineRequestEventFromDriver
 import com.greg.uberclonerider.event.SelectedPlaceEvent
+import com.greg.uberclonerider.model.DriverGeolocation
 import com.greg.uberclonerider.remote.RetrofitService
 import com.greg.uberclonerider.ui.home.HomeFragment
 import com.greg.uberclonerider.utils.Common
@@ -81,6 +83,10 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
     private var animator: ValueAnimator? = null
     //------------------- Find nearby driver -------------------------------------------------------
     private lateinit var mainLayout: RelativeLayout
+    //------------------- Decline request ----------------------------------------------------------
+    private var declinedRequestEvent: DeclineRequestEventFromDriver? = null
+    private var lastDriverCall: DriverGeolocation? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -132,6 +138,9 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
         if (EventBus.getDefault().hasSubscriberForEvent(SelectedPlaceEvent::class.java)){
             EventBus.getDefault().removeStickyEvent(SelectedPlaceEvent::class.java)
         }
+        if (EventBus.getDefault().hasSubscriberForEvent(DeclineRequestEventFromDriver::class.java)){
+            EventBus.getDefault().removeStickyEvent(DeclineRequestEventFromDriver::class.java)
+        }
         EventBus.getDefault().unregister(this)
         super.onStop()
     }
@@ -139,6 +148,14 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
     fun onSelectedPlace(event: SelectedPlaceEvent){
         selectedPlaceEvent = event
+    }
+
+    @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
+    fun onDeclinedRequest(event: DeclineRequestEventFromDriver){
+        if (lastDriverCall != null){
+            Common.driverFound[lastDriverCall!!.key]!!.isDeclined = true
+            findNearbyDriver(selectedPlaceEvent!!.origin)
+        }
     }
 
     //----------------------------------------------------------------------------------------------
@@ -577,7 +594,7 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
         if(Common.driverFound.isNotEmpty()){
             //-------------------------------- Get the first driver by default ---------------------
             var min = 0f
-            var foundDriver = Common.driverFound[Common.driverFound.keys.iterator().next()]
+            var foundDriver: DriverGeolocation? = null //= Common.driverFound[Common.driverFound.keys.iterator().next()]
             val currentRiderLocation = Location("")
             currentRiderLocation.latitude = target.latitude
             currentRiderLocation.longitude = target.longitude
@@ -590,18 +607,42 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
                 //-------------------------------- Init min val & found first driver in list -------
                 if (min == 0f){
                     min = driverLocation.distanceTo(currentRiderLocation)
-                    foundDriver = Common.driverFound[key]
+                    if (!Common.driverFound[key]!!.isDeclined) {
+                        foundDriver = Common.driverFound[key]
+                        //-------------------------------- Exit loop driver already found ----------
+                        break
+                    } else {
+                        //-------------------------------- If already declined ---------------------
+                        continue
+                    }
                 }
                 else if (driverLocation.distanceTo(currentRiderLocation) < min){
                     min = driverLocation.distanceTo(currentRiderLocation)
-                    foundDriver = Common.driverFound[key]
+                    if (!Common.driverFound[key]!!.isDeclined) {
+                        foundDriver = Common.driverFound[key]
+                        //-------------------------------- Exit loop driver already found ----------
+                        break
+                    } else {
+                        //-------------------------------- If already declined ---------------------
+                        continue
+                    }
                 }
             }
             //Snackbar.make(mainLayout, Common.foundDriver(foundDriver!!), Snackbar.LENGTH_LONG).show()
-            UserUtils.sendRequestToDriver(this@RequestDriverActivity, mainLayout, foundDriver, target)
+            if (foundDriver != null) {
+                UserUtils.sendRequestToDriver(this@RequestDriverActivity, mainLayout, foundDriver, target)
+                lastDriverCall = foundDriver
+            }
+            else{
+                KToasty.info(this, getString(R.string.no_driver_accept), Toast.LENGTH_LONG).show()
+                lastDriverCall = null
+                finish()
+            }
         }
         else{
             Snackbar.make(mainLayout, getString(R.string.drivers_not_found), Snackbar.LENGTH_LONG).show()
+            lastDriverCall = null
+            finish()
         }
     }
 }

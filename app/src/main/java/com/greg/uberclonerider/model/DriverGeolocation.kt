@@ -6,6 +6,7 @@ class DriverGeolocation{
     var key: String? = null
     var geoLocation: GeoLocation? = null
     var driverInformation: DriverInformation? = null
+    var isDeclined: Boolean = false
 
     constructor(key: String?, geoLocation: GeoLocation?){
         this.key = key

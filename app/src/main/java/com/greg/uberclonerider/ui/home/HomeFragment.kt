@@ -741,6 +741,10 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
                         markerList.remove(driverGeo.key!!)
                         //-------------------------------- Remove driver's information -------------
                         driverSubscribe.remove(driverGeo.key)
+                        //-------------------------------- When driver decline request, they can accept again if they stop & open the app -------------
+                        if(Common.driverFound != null && Common.driverFound[driverGeo.key!!] != null){
+                            Common.driverFound.remove(driverGeo.key)
+                        }
                         driverLocation.removeEventListener(this)
                     }
                 }

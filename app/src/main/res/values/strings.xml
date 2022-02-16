@@ -81,4 +81,5 @@
     <string name="token_not_found">Token not found</string>
     <string name="send_request_driver_failed">Request driver failed</string>
     <string name="permission_required">Permission required</string>
+    <string name="no_driver_accept">There are no driver accept your request</string>
 </resources>
