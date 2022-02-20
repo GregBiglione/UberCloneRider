@@ -23,11 +23,17 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.google.maps.android.ui.IconGenerator
 import com.greg.uberclonerider.R
+import com.greg.uberclonerider.event.AcceptedRequestEventFromDriver
 import com.greg.uberclonerider.event.DeclineRequestEventFromDriver
 import com.greg.uberclonerider.event.SelectedPlaceEvent
 import com.greg.uberclonerider.model.DriverGeolocation
+import com.greg.uberclonerider.model.TripPlan
 import com.greg.uberclonerider.remote.RetrofitService
 import com.greg.uberclonerider.ui.home.HomeFragment
 import com.greg.uberclonerider.utils.Common
@@ -35,6 +41,7 @@ import com.greg.uberclonerider.utils.Constant.Companion.DESIRED_NUMBER_OF_SPIN
 import com.greg.uberclonerider.utils.Constant.Companion.DESIRED_SECONDS_FOR_ONE_FULL_ROTATION
 import com.greg.uberclonerider.utils.Constant.Companion.DURATION
 import com.greg.uberclonerider.utils.Constant.Companion.TILT_ZOOM
+import com.greg.uberclonerider.utils.Constant.Companion.TRIP
 import com.greg.uberclonerider.utils.UserUtils
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
@@ -86,6 +93,9 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
     //------------------- Decline request ----------------------------------------------------------
     private var declinedRequestEvent: DeclineRequestEventFromDriver? = null
     private var lastDriverCall: DriverGeolocation? = null
+    //------------------- Accept request -----------------------------------------------------------
+    private var acceptedRequestEvent: AcceptedRequestEventFromDriver? = null
+    private lateinit var fillMapView: View
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -141,6 +151,9 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
         if (EventBus.getDefault().hasSubscriberForEvent(DeclineRequestEventFromDriver::class.java)){
             EventBus.getDefault().removeStickyEvent(DeclineRequestEventFromDriver::class.java)
         }
+        if (EventBus.getDefault().hasSubscriberForEvent(AcceptedRequestEventFromDriver::class.java)){
+            EventBus.getDefault().removeStickyEvent(AcceptedRequestEventFromDriver::class.java)
+        }
         EventBus.getDefault().unregister(this)
         super.onStop()
     }
@@ -156,6 +169,12 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
             Common.driverFound[lastDriverCall!!.key]!!.isDeclined = true
             findNearbyDriver(selectedPlaceEvent!!)
         }
+    }
+
+    @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
+    fun onAcceptedRequest(event: AcceptedRequestEventFromDriver){
+        acceptedRequestEvent = event
+        acceptedRequest()
     }
 
     //----------------------------------------------------------------------------------------------
@@ -643,5 +662,64 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
             lastDriverCall = null
             finish()
         }
+    }
+
+    /**-----------------------------------------------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+     *----------------------- Accepted request -------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Accept request ----------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun acceptedRequest(){
+        FirebaseDatabase.getInstance().getReference(TRIP)
+                .child(acceptedRequestEvent!!.tripId)
+                .addListenerForSingleValueEvent(object: ValueEventListener{
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        if (snapshot.exists()){
+                            val tripPlan = snapshot.getValue(TripPlan::class.java)
+                            mMap.clear()
+                            fillMapViewGone()
+                            if (animator != null){
+                                animator!!.end()
+                                moveCameraRequestAccepted()
+                            }
+
+                        }
+                        else {
+                            Snackbar.make(mainLayout, getString(R.string.trip_not_found) + acceptedRequestEvent!!.tripId,
+                                    Snackbar.LENGTH_LONG).show()
+                        }
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Snackbar.make(mainLayout, error.message, Snackbar.LENGTH_LONG).show() // 1 check no pb 9:44
+                    }
+
+                })
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Hide fill map view ------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun fillMapViewGone(){
+        fillMapView = findViewById(R.id.fill_map)
+        fillMapView.visibility = View.GONE
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Move camera position ----------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun moveCameraRequestAccepted(){
+        val cameraPosition = CameraPosition.Builder().target(mMap.cameraPosition.target)
+                .tilt(0f)
+                .zoom(mMap.cameraPosition.zoom)
+                .build()
+        mMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
     }
 }
