@@ -22,6 +22,8 @@ class Constant {
         const val DESTINATION_LOCATION = "DestinationLocation"
         const val DESTINATION_LOCATION_STRING = "DestinationLocationString"
         const val REQUEST_DRIVER_DECLINE = "Decline"
+        const val REQUEST_DRIVER_ACCEPT = "Accept"
+        const val TRIP_KEY = "TripKey"
         //-------------------------------- Camera & gallery ----------------------------------------
         const val ACCESS_CAMERA = Manifest.permission.CAMERA
         const val READ_STORAGE = Manifest.permission.READ_EXTERNAL_STORAGE
