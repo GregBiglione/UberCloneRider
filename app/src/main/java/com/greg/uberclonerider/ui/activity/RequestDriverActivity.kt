@@ -154,7 +154,7 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
     fun onDeclinedRequest(event: DeclineRequestEventFromDriver){
         if (lastDriverCall != null){
             Common.driverFound[lastDriverCall!!.key]!!.isDeclined = true
-            findNearbyDriver(selectedPlaceEvent!!.origin)
+            findNearbyDriver(selectedPlaceEvent!!)
         }
     }
 
@@ -513,19 +513,19 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
 
         originMarker = mMap.addMarker(MarkerOptions().icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
                 .position(selectedPlaceEvent!!.origin))
-        addPulsatingEffect(selectedPlaceEvent!!.origin)
+        addPulsatingEffect(selectedPlaceEvent!!)
     }
 
     //----------------------------------------------------------------------------------------------
     //-------------------------------- Pulsating effect --------------------------------------------
     //----------------------------------------------------------------------------------------------
 
-    private fun addPulsatingEffect(origin: LatLng) {
+    private fun addPulsatingEffect(selectedPlaceEvent: SelectedPlaceEvent) {
         if (lastPulseAnimator != null){
             lastPulseAnimator!!.cancel()
         }
         if (lastUserCircle != null){
-            lastUserCircle!!.center = origin
+            lastUserCircle!!.center = selectedPlaceEvent.origin
         }
         lastPulseAnimator = Common.valueAnimate(DURATION, object: ValueAnimator.AnimatorUpdateListener{
             override fun onAnimationUpdate(valueAnimator: ValueAnimator) {
@@ -534,7 +534,7 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
                 else{
                     lastUserCircle = mMap.addCircle(CircleOptions()
-                            .center(origin)
+                            .center(selectedPlaceEvent.origin)
                             .radius(valueAnimator.animatedValue.toString().toDouble())
                             .strokeColor(Color.WHITE)
                             .fillColor(ContextCompat.getColor(this@RequestDriverActivity, R.color.map_darker))
@@ -543,14 +543,14 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         })
         //-------------------------------- Start rotating camera -----------------------------------
-        startMapCameraSpinningAnimation(mMap.cameraPosition.target)
+        startMapCameraSpinningAnimation(selectedPlaceEvent)
     }
 
     //----------------------------------------------------------------------------------------------
     //-------------------------------- Camera rotation ---------------------------------------------
     //----------------------------------------------------------------------------------------------
 
-    private fun startMapCameraSpinningAnimation(target: LatLng) {
+    private fun startMapCameraSpinningAnimation(selectedPlaceEvent: SelectedPlaceEvent?) {
         if (animator != null){
             animator!!.cancel()
         }
@@ -562,14 +562,14 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
             val newBearingValue = valueAnimator.animatedValue as Float
 
             mMap.moveCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
-                    .target(target)
+                    .target(selectedPlaceEvent!!.origin)
                     .zoom(TILT_ZOOM)
                     .tilt(45f)
                     .bearing(newBearingValue)
                     .build()))
         }
         animator!!.start()
-        findNearbyDriver(target)
+        findNearbyDriver(selectedPlaceEvent)
     }
 
     override fun onDestroy() {
@@ -589,15 +589,15 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
     //-------------------------------- Find nearby driver ------------------------------------------
     //----------------------------------------------------------------------------------------------
 
-    private fun findNearbyDriver(target: LatLng) {
+    private fun findNearbyDriver(selectedPlaceEvent: SelectedPlaceEvent?) {
         mainLayout = findViewById(R.id.main_layout)
         if(Common.driverFound.isNotEmpty()){
             //-------------------------------- Get the first driver by default ---------------------
             var min = 0f
-            var foundDriver: DriverGeolocation? = null //= Common.driverFound[Common.driverFound.keys.iterator().next()]
+            var foundDriver: DriverGeolocation? = null
             val currentRiderLocation = Location("")
-            currentRiderLocation.latitude = target.latitude
-            currentRiderLocation.longitude = target.longitude
+            currentRiderLocation.latitude = selectedPlaceEvent!!.origin.latitude
+            currentRiderLocation.longitude = selectedPlaceEvent.origin.longitude
 
             for(key in Common.driverFound.keys){
                 val driverLocation = Location("")
@@ -628,9 +628,8 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
                 }
             }
-            //Snackbar.make(mainLayout, Common.foundDriver(foundDriver!!), Snackbar.LENGTH_LONG).show()
             if (foundDriver != null) {
-                UserUtils.sendRequestToDriver(this@RequestDriverActivity, mainLayout, foundDriver, target)
+                UserUtils.sendRequestToDriver(this@RequestDriverActivity, mainLayout, foundDriver, selectedPlaceEvent)
                 lastDriverCall = foundDriver
             }
             else{

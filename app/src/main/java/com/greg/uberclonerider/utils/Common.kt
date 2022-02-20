@@ -14,9 +14,9 @@ import android.widget.TextView
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.maps.model.LatLng
 import com.greg.uberclonerider.R
+import com.greg.uberclonerider.event.SelectedPlaceEvent
 import com.greg.uberclonerider.model.DriverGeolocation
 import com.greg.uberclonerider.model.Rider
-import com.greg.uberclonerider.ui.home.HomeFragment
 import com.greg.uberclonerider.utils.Constant.Companion.NOTIFICATION_CHANNEL_ID
 import java.lang.Math.abs
 import java.lang.Math.atan
@@ -273,10 +273,21 @@ object Common {
     //-------------------------------- Pick up location builder for notification -------------------
     //----------------------------------------------------------------------------------------------
 
-    fun buildPickUpLocation(target: LatLng): String {
-        return StringBuilder(target.latitude.toString())
+    fun buildPickUpLocation(selectedPlaceEvent: SelectedPlaceEvent): String {
+        return StringBuilder(selectedPlaceEvent.origin.latitude.toString())
             .append(",")
-            .append(target.longitude)
+            .append(selectedPlaceEvent.origin.longitude)
             .toString()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Pick up destination builder for notification ----------------
+    //----------------------------------------------------------------------------------------------
+
+    fun buildPickUpDestination(selectedPlaceEvent: SelectedPlaceEvent): String {
+        return StringBuilder(selectedPlaceEvent.destination.latitude.toString())
+                .append(",")
+                .append(selectedPlaceEvent.destination.longitude)
+                .toString()
     }
 }

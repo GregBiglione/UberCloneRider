@@ -18,6 +18,10 @@ class Constant {
         const val REQUEST_DRIVER_TITLE = "RequestDriver"
         const val REQUEST_DRIVER_BODY = "This message represent for request driver action"
         const val PICKUP_LOCATION = "PickupLocation"
+        const val PICKUP_LOCATION_STRING = "PickupLocationString"
+        const val DESTINATION_LOCATION = "DestinationLocation"
+        const val DESTINATION_LOCATION_STRING = "DestinationLocationString"
+        const val REQUEST_DRIVER_DECLINE = "Decline"
         //-------------------------------- Camera & gallery ----------------------------------------
         const val ACCESS_CAMERA = Manifest.permission.CAMERA
         const val READ_STORAGE = Manifest.permission.READ_EXTERNAL_STORAGE

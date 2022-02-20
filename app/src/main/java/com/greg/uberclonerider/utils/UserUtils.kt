@@ -7,7 +7,6 @@ import android.view.View
 import android.widget.RelativeLayout
 import android.widget.Toast
 import com.droidman.ktoasty.KToasty
-import com.google.android.gms.maps.model.LatLng
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
@@ -15,13 +14,17 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.greg.uberclonerider.R
+import com.greg.uberclonerider.event.SelectedPlaceEvent
 import com.greg.uberclonerider.model.DriverGeolocation
 import com.greg.uberclonerider.model.FCMSendData
 import com.greg.uberclonerider.model.Token
 import com.greg.uberclonerider.remote.FCMService
+import com.greg.uberclonerider.utils.Constant.Companion.DESTINATION_LOCATION
+import com.greg.uberclonerider.utils.Constant.Companion.DESTINATION_LOCATION_STRING
 import com.greg.uberclonerider.utils.Constant.Companion.NOTIFICATION_BODY
 import com.greg.uberclonerider.utils.Constant.Companion.NOTIFICATION_TITLE
 import com.greg.uberclonerider.utils.Constant.Companion.PICKUP_LOCATION
+import com.greg.uberclonerider.utils.Constant.Companion.PICKUP_LOCATION_STRING
 import com.greg.uberclonerider.utils.Constant.Companion.REQUEST_DRIVER_BODY
 import com.greg.uberclonerider.utils.Constant.Companion.REQUEST_DRIVER_TITLE
 import com.greg.uberclonerider.utils.Constant.Companion.RIDER_INFORMATION
@@ -73,7 +76,7 @@ object UserUtils {
     //-------------------------------- Send request to driver --------------------------------------
     //----------------------------------------------------------------------------------------------
 
-    fun sendRequestToDriver(context: Context, mainLayout: RelativeLayout?, foundDriver: DriverGeolocation?, target: LatLng) {
+    fun sendRequestToDriver(context: Context, mainLayout: RelativeLayout?, foundDriver: DriverGeolocation?, selectedPlaceEvent: SelectedPlaceEvent) {
         val compositeDisposable = CompositeDisposable()
         val iFcmService = FCMService.getInstance()
 
@@ -88,7 +91,12 @@ object UserUtils {
 
                             notificationData[NOTIFICATION_TITLE] = REQUEST_DRIVER_TITLE
                             notificationData[NOTIFICATION_BODY] = REQUEST_DRIVER_BODY
-                            notificationData[PICKUP_LOCATION] = Common.buildPickUpLocation(target)
+                            notificationData[PICKUP_LOCATION_STRING] = selectedPlaceEvent.originString
+                            notificationData[PICKUP_LOCATION] = Common.buildPickUpLocation(selectedPlaceEvent)
+                            notificationData[RIDER_KEY] = FirebaseAuth.getInstance().currentUser!!.uid
+
+                            notificationData[DESTINATION_LOCATION_STRING] = selectedPlaceEvent.destinationString
+                            notificationData[DESTINATION_LOCATION] = Common.buildPickUpDestination(selectedPlaceEvent)
                             notificationData[RIDER_KEY] = FirebaseAuth.getInstance().currentUser!!.uid
 
                             val fcmSendData = FCMSendData(token.toString(), notificationData)
