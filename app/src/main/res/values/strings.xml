@@ -83,4 +83,11 @@
     <string name="permission_required">Permission required</string>
     <string name="no_driver_accept">There are no driver accept your request</string>
     <string name="trip_not_found">Cannot found trip with key</string>
+    <string name="uber_x">Vehicle type</string>
+    <string name="car_number">AB 123 CD</string>
+    <string name="driver_name">Driver name</string>
+    <string name="ascii_dot">■</string>
+    <string name="_4_75">4.75</string>
+    <string name="language">English</string>
+    <string name="any_pickup_note">Any pickup note?</string>
 </resources>

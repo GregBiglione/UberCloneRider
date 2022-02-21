@@ -1,6 +1,6 @@
 package com.greg.uberclonerider.model
 
-data class DriverInformation(
+data class Driver(
         var avatar: String? = null,
         var firstName: String? = null,
         var lastName: String? = null,

@@ -4,7 +4,7 @@ data class TripPlan(
     var riderKey: String? = null, //2 11:22
     var driverId: String? = null,
     var rider: Rider? = null,
-    var driverGeolocation: DriverGeolocation? = null,
+    var driver: Driver? = null,
     var origin: String? = null,
     var originString: String? = null,
     var destination: String? = null,

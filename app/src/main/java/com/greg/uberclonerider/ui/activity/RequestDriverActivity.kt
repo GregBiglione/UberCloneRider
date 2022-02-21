@@ -2,6 +2,7 @@ package com.greg.uberclonerider.ui.activity
 
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
+import android.content.ContentValues.TAG
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -15,6 +16,7 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
+import com.bumptech.glide.Glide
 import com.droidman.ktoasty.KToasty
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -43,6 +45,7 @@ import com.greg.uberclonerider.utils.Constant.Companion.DURATION
 import com.greg.uberclonerider.utils.Constant.Companion.TILT_ZOOM
 import com.greg.uberclonerider.utils.Constant.Companion.TRIP
 import com.greg.uberclonerider.utils.UserUtils
+import de.hdodenhof.circleimageview.CircleImageView
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.schedulers.Schedulers
@@ -96,7 +99,10 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
     //------------------- Accept request -----------------------------------------------------------
     private var acceptedRequestEvent: AcceptedRequestEventFromDriver? = null
     private lateinit var fillMapView: View
-
+    private var tripPlan: TripPlan? = null
+    private lateinit var driverPhoto: CircleImageView
+    private lateinit var driverFirstName: TextView
+    private lateinit var driverInformationLayout: CardView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -680,14 +686,15 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
                 .addListenerForSingleValueEvent(object: ValueEventListener{
                     override fun onDataChange(snapshot: DataSnapshot) {
                         if (snapshot.exists()){
-                            val tripPlan = snapshot.getValue(TripPlan::class.java)
+                            tripPlan = snapshot.getValue(TripPlan::class.java)
+
                             mMap.clear()
                             fillMapViewGone()
                             if (animator != null){
                                 animator!!.end()
-                                moveCameraRequestAccepted()
                             }
-
+                            moveCameraRequestAccepted()
+                            loadDriverData(tripPlan!!)
                         }
                         else {
                             Snackbar.make(mainLayout, getString(R.string.trip_not_found) + acceptedRequestEvent!!.tripId,
@@ -696,7 +703,7 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
 
                     override fun onCancelled(error: DatabaseError) {
-                        Snackbar.make(mainLayout, error.message, Snackbar.LENGTH_LONG).show() // 1 check no pb 9:44
+                        Snackbar.make(mainLayout, error.message, Snackbar.LENGTH_LONG).show()
                     }
 
                 })
@@ -721,5 +728,23 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
                 .zoom(mMap.cameraPosition.zoom)
                 .build()
         mMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Load driver data --------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun loadDriverData(tripPlan :TripPlan){
+       driverPhoto = findViewById(R.id.driver_photo)
+       driverFirstName = findViewById(R.id.driver_name_tv)
+       driverInformationLayout = findViewById(R.id.driver_information_cv)
+
+       Glide.with(this)
+               .load(tripPlan.driver!!.avatar)
+               .into(driverPhoto)
+        driverFirstName.text = tripPlan.driver!!.firstName
+        confirmPickUpLayout.visibility = View.GONE
+        confirmUberLayout.visibility = View.GONE
+        driverInformationLayout.visibility = View.VISIBLE
     }
 }

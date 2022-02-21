@@ -39,5 +39,7 @@
 
         <include layout="@layout/finding_your_driver"/>
 
+        <include layout="@layout/driver_information"/>
+
     </FrameLayout>
 </RelativeLayout>

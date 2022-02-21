@@ -45,8 +45,8 @@ import com.greg.uberclonerider.callback.FirebaseFailedListener
 import com.greg.uberclonerider.databinding.FragmentHomeBinding
 import com.greg.uberclonerider.event.SelectedPlaceEvent
 import com.greg.uberclonerider.model.Animation
+import com.greg.uberclonerider.model.Driver
 import com.greg.uberclonerider.model.DriverGeolocation
-import com.greg.uberclonerider.model.DriverInformation
 import com.greg.uberclonerider.model.GeolocationQuery
 import com.greg.uberclonerider.remote.RetrofitService
 import com.greg.uberclonerider.ui.activity.RequestDriverActivity
@@ -678,8 +678,8 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
                 .addListenerForSingleValueEvent(object: ValueEventListener{
                     override fun onDataChange(snapshot: DataSnapshot) {
                         if (snapshot.hasChildren()){
-                            driverGeolocation.driverInformation = (snapshot.getValue(DriverInformation::class.java))
-                            Common.driverFound[driverGeolocation.key!!]!!.driverInformation = (snapshot.getValue(DriverInformation::class.java))
+                            driverGeolocation.driver = (snapshot.getValue(Driver::class.java))
+                            Common.driverFound[driverGeolocation.key!!]!!.driver = (snapshot.getValue(Driver::class.java))
                             iFirebaseDriverInformationListener.onDriverInformationLoadSuccess(driverGeolocation)
                         }
                         else{
@@ -711,10 +711,10 @@ class HomeFragment : Fragment(), FirebaseDriverInformationListener{
                             .position(LatLng(driverGeolocation.geoLocation!!.latitude, driverGeolocation.geoLocation!!.longitude))
                             .flat(true)
                             .title(Common.buildDriverName(
-                                    driverGeolocation.driverInformation!!.firstName,
-                                    driverGeolocation.driverInformation!!.lastName)
+                                    driverGeolocation.driver!!.firstName,
+                                    driverGeolocation.driver!!.lastName)
                             )
-                            .snippet(driverGeolocation.driverInformation!!.phoneNumber)
+                            .snippet(driverGeolocation.driver!!.phoneNumber)
                             .icon(BitmapDescriptorFactory.fromResource(R.drawable.vader_tie))
             )!!
         }

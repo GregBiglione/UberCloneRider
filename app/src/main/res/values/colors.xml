@@ -16,4 +16,5 @@
     <color name="money_color">#FF737373</color>
     <color name="blue_uber_color">#FF2C6FF2</color>
     <color name="map_darker">#66333333</color>
+    <color name="star_color">#F9E911</color>
 </resources>
