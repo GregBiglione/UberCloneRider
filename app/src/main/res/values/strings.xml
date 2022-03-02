@@ -90,4 +90,6 @@
     <string name="_4_75">4.75</string>
     <string name="language">English</string>
     <string name="any_pickup_note">Any pickup note?</string>
+    <string name="_3">3</string>
+    <string name="min_naway">Min\nAway</string>
 </resources>

@@ -7,16 +7,22 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
+import android.view.LayoutInflater
+import android.view.View
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.ui.IconGenerator
 import com.greg.uberclonerider.R
 import com.greg.uberclonerider.event.SelectedPlaceEvent
 import com.greg.uberclonerider.model.DriverGeolocation
 import com.greg.uberclonerider.model.Rider
+import com.greg.uberclonerider.model.TripPlan
 import com.greg.uberclonerider.utils.Constant.Companion.NOTIFICATION_CHANNEL_ID
 import java.lang.Math.abs
 import java.lang.Math.atan
@@ -288,6 +294,62 @@ object Common {
         return StringBuilder(selectedPlaceEvent.destination.latitude.toString())
                 .append(",")
                 .append(selectedPlaceEvent.destination.longitude)
+                .toString()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Current driver location from builder ------------------------
+    //----------------------------------------------------------------------------------------------
+
+    fun currentDriverLocation(tripPlan: TripPlan): String {
+        return StringBuilder(tripPlan.currentLat.toString())
+                .append(",")
+                .append(tripPlan.currentLng)
+                .toString()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Create icon with duration -----------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    fun createIconWithDuration(context: Context, duration: String): Bitmap? {
+        val view = LayoutInflater.from(context).inflate(R.layout.pickup_info_window_with_duration, null)
+        val timeTv = view.findViewById<View>(R.id.duration_tv) as TextView
+        timeTv.text = getTimeFromText(duration)
+
+        val generator = IconGenerator(context)
+        generator.setContentView(view)
+        generator.setBackground(ColorDrawable(Color.TRANSPARENT))
+        return generator.makeIcon()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Get time from text ------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun getTimeFromText(s: String): String {
+        return s.substring(0, s.indexOf(" "))
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Driver old position from builder ----------------------------
+    //----------------------------------------------------------------------------------------------
+
+    fun driverOldPosition(tripPlan: TripPlan): String {
+        return StringBuilder(tripPlan.currentLat.toString())
+                .append(",")
+                .append(tripPlan.currentLng)
+                .toString()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Driver new position from builder ----------------------------
+    //----------------------------------------------------------------------------------------------
+
+    fun driverNewPosition(tripPlan: TripPlan): String {
+        return StringBuilder(tripPlan.currentLat.toString())
+                .append(",")
+                .append(tripPlan.currentLng)
                 .toString()
     }
 }

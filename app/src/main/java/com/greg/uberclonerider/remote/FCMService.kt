@@ -15,7 +15,7 @@ import retrofit2.http.POST
 interface FCMService {
     @Headers(
             "Content-Type:application/json",
-            "Authorization:key=$FIREBASE_KEY"
+            "Authorization:key=AAAAyEauZbk:APA91bEW8SaU8Xc-xCOeE4u1bBJZ5kwkR7CP9XPjlzuXY09rfhfbB-I99ETV63U6S3a_y0h3xn01J8jda9_rLFhz3Du8EeQ2llznx9QU8oNeNBPYLD7cexQFZUk9Qi6eG8iYtQTj-BdR"
     )
     @POST("fcm/send")
     fun sendNotification(@Body body: FCMSendData?): Observable<FCMResponse?>?

@@ -5,10 +5,13 @@ import android.annotation.SuppressLint
 import android.content.ContentValues.TAG
 import android.content.res.Resources
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.location.Location
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.view.animation.LinearInterpolator
@@ -103,6 +106,23 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var driverPhoto: CircleImageView
     private lateinit var driverFirstName: TextView
     private lateinit var driverInformationLayout: CardView
+    //------------------- Driver movement after ccept request --------------------------------------
+    private var driverLocation: String? = null
+    private var origin: LatLng? = null
+    private var destination: LatLng? = null
+    private var driverOldPosition: String? = null
+    private var driverNewPosition: String? = null
+    private var handler: Handler? = null
+    private var v = 0f
+    private var lat = 0.0
+    private var lng = 0.0
+    private var index = 0
+    private var next = 0
+    private var start: LatLng? = null
+    private var end: LatLng? = null
+    private var bitmap: Bitmap? = null
+    private var markerForMovement: Marker? = null
+    private var newData: TripPlan? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -136,7 +156,6 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
      *----------------------- Estimate routes --------------------------------------------------------------------------------------------------------------
      *------------------------------------------------------------------------------------------------------------------------------------------------------
     ------------------------------------------------------------------------------------------------------------------------------------------------------*/
-
 
     //----------------------------------------------------------------------------------------------
     //-------------------------------- Selected place ----------------------------------------------
@@ -694,7 +713,9 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
                                 animator!!.end()
                             }
                             moveCameraRequestAccepted()
-                            loadDriverData(tripPlan!!)
+                            //-------------------------------- Get routes --------------------------
+                            getRoutes()
+                            //loadDriverData(tripPlan!!)
                         }
                         else {
                             Snackbar.make(mainLayout, getString(R.string.trip_not_found) + acceptedRequestEvent!!.tripId,
@@ -746,5 +767,251 @@ class RequestDriverActivity : AppCompatActivity(), OnMapReadyCallback {
         confirmPickUpLayout.visibility = View.GONE
         confirmUberLayout.visibility = View.GONE
         driverInformationLayout.visibility = View.VISIBLE
+    }
+
+    /**-----------------------------------------------------------------------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+     *----------------------- Driver movement after accepted request ---------------------------------------------------------------------------------------
+     *------------------------------------------------------------------------------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Get routes --------------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun getRoutes(){
+        driverLocation = Common.currentDriverLocation(tripPlan!!)
+        addRoutes()
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Add routes --------------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun addRoutes(){
+        compositeDisposable.add(
+            iRetrofitService.getDirections(
+                "driving",
+                "less_driving",
+                driverLocation,
+                tripPlan!!.origin,
+                getString(R.string.ApiKey))!!
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe { returnResult ->
+                        try {
+                            val jsonObject = JSONObject(returnResult)
+                            jsonArray = jsonObject.getJSONArray("routes")
+
+                            for (j in 0 until jsonArray.length()){
+                                val route = jsonArray.getJSONObject(j)
+                                val poly = route.getJSONObject("overview_polyline")
+                                val polyline = poly.getString("points")
+                                polylineList = Common.decodePoly(polyline)
+                            }
+
+                            //-------------------------------- Polyline options --------------------
+                            pathStyle()
+                            //-------------------------------- Animation ---------------------------
+                            animateForTrip()
+
+                        } catch (e: Exception) {
+                            KToasty.error(this, e.message!!, Toast.LENGTH_LONG).show()
+                        }
+                    }
+        )
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Animate for trip --------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun animateForTrip() {
+        val objects = jsonArray.getJSONObject(0)
+        val legs = objects.getJSONArray("legs")
+        val legsObject = legs.getJSONObject(0)
+
+        val time = legsObject.getJSONObject("duration")
+        val duration = time.getString("text")
+
+        origin = LatLng(
+                tripPlan!!.origin!!.split(",")[0].toDouble(),
+                tripPlan!!.origin!!.split(",")[1].toDouble()
+        )
+        destination = LatLng(tripPlan!!.currentLat, tripPlan!!.currentLng)
+
+        latLngBound = LatLngBounds.Builder()
+                .include(origin!!)
+                .include(destination!!)
+                .build()
+
+        //-------------------------------- Add pickup marker with duration -------------------------
+        addPickUpMarkerWithDuration(duration, origin!!)
+        addDriverMarker(destination!!)
+        moveCameraToLatLngBounds()
+        //-------------------------------- Initialize driver for moving ----------------------------
+        initializeDriverForMoving(acceptedRequestEvent!!.tripId, tripPlan!!)
+        loadDriverData(tripPlan!!)
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Add pickup marker with duration -----------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun addPickUpMarkerWithDuration(duration: String, origin: LatLng) {
+        icon = Common.createIconWithDuration(this, duration)!!
+
+        originMarker = mMap.addMarker(MarkerOptions()
+                .icon(BitmapDescriptorFactory.fromBitmap(icon))
+                .position(origin))
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Add driver marker -------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun addDriverMarker(destination: LatLng){
+        destinationMarker = mMap.addMarker(MarkerOptions()
+                .flat(true)
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.vader_tie))
+                .position(destination))
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Initialize driver for moving --------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun initializeDriverForMoving(tripId: String, tripPlan: TripPlan) {
+        driverOldPosition = Common.driverOldPosition(tripPlan)
+        getDriverNewPosition(tripId)
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Get driver new position -------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun getDriverNewPosition(tripId: String) {
+        FirebaseDatabase.getInstance().getReference(TRIP)
+                .child(tripId)
+                .addValueEventListener(object: ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        newData = snapshot.getValue(TripPlan::class.java)
+                        driverNewPosition = Common.driverNewPosition(newData!!)
+
+                        if (!driverOldPosition.equals(driverNewPosition)){
+                            moveMarkerAnimation(destinationMarker!!, driverOldPosition, driverNewPosition!!)
+                        }
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Snackbar.make(mainLayout, error.message, Snackbar.LENGTH_LONG).show()
+                    }
+                })
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Move marker animation ---------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun moveMarkerAnimation(marker: Marker, from: String?, to: String) {
+        markerForMovement = marker
+        driverNewPosition = to
+        compositeDisposable.add(
+                iRetrofitService.getDirections(
+                        "driving",
+                        "less_driving",
+                        from,
+                        to,
+                        getString(R.string.ApiKey))!!
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe { returnResult ->
+                            try {
+                                val jsonObject = JSONObject(returnResult)
+                                jsonArray = jsonObject.getJSONArray("routes")
+
+                                for (j in 0 until jsonArray.length()){
+                                    val route = jsonArray.getJSONObject(j)
+                                    val poly = route.getJSONObject("overview_polyline")
+                                    val polyline = poly.getString("points")
+                                    polylineList = Common.decodePoly(polyline)
+                                }
+
+                                //-------------------------------- Polyline options ------------------------
+                                blackPolylineStyle()
+                                //-------------------------------- Animation -------------------------------
+                                animateForMovementTrip()
+
+                            } catch (e: Exception) {
+                                KToasty.error(this, e.message!!, Toast.LENGTH_LONG).show()
+                            }
+                        }
+        )
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Animate for movement trip -----------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun animateForMovementTrip(){
+        val objects = jsonArray.getJSONObject(0)
+        val legs = objects.getJSONArray("legs")
+        val legsObject = legs.getJSONObject(0)
+
+        val time = legsObject.getJSONObject("duration")
+        val duration = time.getString("text")
+
+        bitmap = Common.createIconWithDuration(this, duration)
+        originMarker!!.setIcon(BitmapDescriptorFactory.fromBitmap(bitmap!!))
+
+        //-------------------------------- Moving --------------------------------------------------
+        handler = Handler(Looper.getMainLooper())
+        index = -1
+        next = 1
+        handler!!.postDelayed(runnable, 1500)
+        driverOldPosition = driverNewPosition
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Runnable ----------------------------------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private val runnable = object: Runnable {
+        override fun run() {
+            if (index < polylineList!!.size - 2){
+                index++
+                next = index + 1
+                start = polylineList!![index]
+                end = polylineList!![next]
+            }
+
+            val valueAnimator = ValueAnimator.ofInt(0, 1)
+            valueAnimator.duration = 1500
+            valueAnimator.interpolator = LinearInterpolator()
+            valueAnimator.addUpdateListener { valueNewAnimator ->
+                v = valueNewAnimator.animatedFraction
+                lat = v * end!!.latitude + (1 - v) * start!!.latitude
+                lng = v * end!!.longitude + (1 - v) * end!!.longitude
+
+                val newPosition = LatLng(lat, lng)
+                markerForMovement!!.position = newPosition
+                markerForMovement!!.setAnchor(0.5f, 0.5f)
+                markerForMovement!!.rotation = Common.getBearing(start!!, newPosition)
+                moveCameraToMovementPosition(newPosition)
+            }
+            valueAnimator.start()
+
+            if (index < polylineList!!.size - 2){
+                handler!!.postDelayed(this, 1500)
+            }
+        }
+    }
+
+    //----------------------------------------------------------------------------------------------
+    //-------------------------------- Move camera to selected place origin ------------------------
+    //----------------------------------------------------------------------------------------------
+
+    private fun moveCameraToMovementPosition(newPosition: LatLng) {
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(newPosition))
     }
 }
